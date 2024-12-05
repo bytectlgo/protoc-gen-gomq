@@ -1,13 +1,7 @@
-# version: v2
-# plugins:
-#   - local: protoc-gen-go
-#     out: generate/go/api
-#     opt: paths=source_relative
-# inputs:
-#   - directory: generate
-
 version: v2
 plugins:
   - remote: buf.build/protocolbuffers/go
-    out: .
+    out: protobuf
     opt: paths=source_relative
+inputs:
+  - directory: protobuf

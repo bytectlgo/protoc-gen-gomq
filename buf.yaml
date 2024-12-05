@@ -5,8 +5,9 @@ lint:
     - STANDARD
 modules:
   - path: protobuf
+    name: buf.build/bytectl/protobuf
 breaking:
   use:
     - FILE
-deps:
-  - buf.build/googleapis/googleapis
+# deps:
+#   - buf.build/googleapis/googleapis
