@@ -3,7 +3,7 @@ syntax = "proto3";
 
 package example;
 
-import "bytectl/protobuf/mq.proto";
+import "mq.proto";
 
 option go_package = "github.com/bytectlgo/protoc-gen-gomq/example;example";
 

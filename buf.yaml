@@ -6,6 +6,7 @@ lint:
 modules:
   - path: protobuf
     name: buf.build/bytectl/protobuf
+  - path: example
 breaking:
   use:
     - FILE
