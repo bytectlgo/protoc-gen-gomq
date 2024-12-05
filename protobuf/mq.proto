@@ -1,0 +1,19 @@
+
+syntax = "proto3";
+
+package bytectl.protobuf;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/bytectlgo/protoc-gen-gomq/protobuf;protobuf";
+
+extend google.protobuf.MethodOptions {
+    // See `MQRule`.
+    MQRule mq = 7229572;
+}
+
+message MQRule {
+    string prefix = 1;
+    string topic = 2;
+    string reply_topic = 3;
+}

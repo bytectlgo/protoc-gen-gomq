@@ -1,0 +1,29 @@
+
+syntax = "proto3";
+
+package example;
+
+import "google/protobuf/descriptor.proto";
+import "protobuf/mq.proto";
+
+option go_package = "github.com/bytectlgo/protoc-gen-gomq/example;example";
+
+service ExampleMQ {
+    rpc DeviceInfo(DeviceInfoPulish) returns (DeviceInfoReply) {
+        option (bytectl.protobuf.mq) = {
+            prefix : "$share/device/"
+            topic : "/$SYS/brokers/:node/clients/:clientId/connected"
+            reply_topic : "/$SYS/brokers/:node/clients/:clientId/connected_reply"
+        };
+    }
+}
+
+message DeviceInfoPulish {
+    string device_id = 1;
+    string device_name = 2;
+}
+
+message DeviceInfoReply {
+    string code = 1;
+    string msg = 2;
+}
