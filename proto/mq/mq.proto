@@ -1,11 +1,11 @@
 
 syntax = "proto3";
 
-package bytectl.protobuf;
+package mq;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/bytectlgo/protoc-gen-gomq/protobuf;protobuf";
+option go_package = "github.com/bytectlgo/protoc-gen-gomq/mq;mq";
 
 extend google.protobuf.MethodOptions {
     // See `MQRule`.

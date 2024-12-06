@@ -1,7 +1,7 @@
 version: v2
 plugins:
   - remote: buf.build/protocolbuffers/go
-    out: protobuf
+    out: .
     opt: paths=source_relative
 inputs:
-  - directory: protobuf
+  - directory: proto

@@ -4,6 +4,11 @@ plugins:
   - local: protoc-gen-go
     out: example
     opt: paths=source_relative
+  - local: protoc-gen-debug
+    out: example
+    opt: example
+  - local: protoc-gen-gomq
+    out: example
+    opt: paths=source_relative
 inputs:
   - directory: example
-  - directory: protobuf
