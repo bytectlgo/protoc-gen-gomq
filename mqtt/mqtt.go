@@ -21,7 +21,7 @@ func NewMQTTMsgServer(client pmqtt.Client) *MQTTMsgServer {
 	srv := &MQTTMsgServer{
 		mqttClient: client,
 	}
-	srv.router = mq.NewMQRouter()
+	srv.router = router.NewMQRouter()
 	return srv
 }
 
