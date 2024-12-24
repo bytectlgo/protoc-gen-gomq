@@ -3,7 +3,7 @@ package module
 import (
 	"text/template"
 
-	"github.com/bytectlgo/protoc-gen-gomq/mq"
+	"github.com/bytectlgo/protoc-gen-gomq/genarate/mq"
 	pgs "github.com/lyft/protoc-gen-star/v2"
 	pgsgo "github.com/lyft/protoc-gen-star/v2/lang/go"
 	"google.golang.org/protobuf/proto"

@@ -7,7 +7,7 @@
 package example
 
 import (
-	_ "github.com/bytectlgo/protoc-gen-gomq/mq"
+	_ "github.com/bytectlgo/protoc-gen-gomq/gen/mq"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

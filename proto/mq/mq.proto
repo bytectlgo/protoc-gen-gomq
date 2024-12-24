@@ -5,7 +5,7 @@ package mq;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/bytectlgo/protoc-gen-gomq/mq;mq";
+option go_package = "github.com/bytectlgo/protoc-gen-gomq/genarate/mq;mq";
 
 extend google.protobuf.MethodOptions {
     // See `MQRule`.
