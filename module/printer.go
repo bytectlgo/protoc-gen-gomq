@@ -7,7 +7,7 @@ import (
 
 	"bytes"
 
-	"github.com/bytectlgo/protoc-gen-gomq/mq"
+	"github.com/bytectlgo/protoc-gen-gomq/genarate/mq"
 	pgs "github.com/lyft/protoc-gen-star/v2"
 	"google.golang.org/protobuf/proto"
 )

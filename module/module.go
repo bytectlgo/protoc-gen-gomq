@@ -79,7 +79,7 @@ func (m mod) generate(f pgs.File) {
 const mqTpl = `package {{ package . }}
 
 import (
-	"github.com/bytectlgo/protoc-gen-gomq/mq"
+	"github.com/bytectlgo/protoc-gen-gomq/genarate/mq"
 	"github.com/go-kratos/kratos/v2/log"
 )
 

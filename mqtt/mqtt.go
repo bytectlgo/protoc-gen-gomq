@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/bytectlgo/crouter"
@@ -29,18 +30,19 @@ func (s *MQTTMsgServer) Subscribe(topic string, qos byte, h Handle) error {
 	subscribeTopic := getSubscribeTopic(topic)
 	routePath := getRoutePathFromTopic(topic)
 	s.mqttClient.Subscribe(subscribeTopic, qos, s.serve)
-	hnext := func(ctx context.Context, client any, msg any, ps crouter.Params) {
+	hnext := func(ctx context.Context, client any, msg any, ps crouter.Params) error {
 		c, ok := client.(pmqtt.Client)
 		if !ok {
 			log.Errorf("client is not a pmqtt.Client")
-			return
+			return fmt.Errorf("client is not a pmqtt.Client")
 		}
 		m, ok := msg.(pmqtt.Message)
 		if !ok {
 			log.Errorf("msg is not a pmqtt.Message")
-			return
+			return fmt.Errorf("msg is not a pmqtt.Message")
 		}
 		h(ctx, c, m, ps)
+		return nil
 	}
 	s.router.Handle(routePath, hnext)
 	return nil

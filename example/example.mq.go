@@ -1,7 +1,7 @@
 package example
 
 import (
-	"github.com/bytectlgo/protoc-gen-gomq/mq"
+	"github.com/bytectlgo/protoc-gen-gomq/genarate/mq"
 	"github.com/go-kratos/kratos/v2/log"
 )
 
