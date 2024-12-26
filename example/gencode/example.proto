@@ -3,20 +3,20 @@ syntax = "proto3";
 
 package example;
 
-import "mq/mq.proto";
+import "mq/mqtt.proto";
 
 option go_package = "github.com/bytectlgo/protoc-gen-gomq/example;example";
 
 service ExampleMQ {
     rpc DeviceInfo(DeviceInfoPulish) returns (DeviceInfoReply) {
-        option (mq.mq) = {
+        option (mq.mqtt) = {
             prefix : "$share/device/"
             topic : "/$SYS/brokers/:node/clients/:clientId/connected"
             reply_topic : "/$SYS/brokers/:node/clients/:clientId/connected_reply"
         };
     }
     rpc DeviceProperty(DevicePropertyulish) returns (DevicePropertyReply) {
-        option (mq.mq) = {
+        option (mq.mqtt) = {
             prefix : "$share/device/"
             topic : "/device/:device_id/property"
             reply_topic : "/device/:device_id/property_reply"

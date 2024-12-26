@@ -1,23 +1,21 @@
 package mqtt
 
 import (
+	"bytes"
 	"context"
-	"errors"
-	"net"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
+	"github.com/bytectlgo/protoc-gen-gomq/pkg/matcher"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/gorilla/mux"
-
-	"github.com/go-kratos/kratos/v2/internal/endpoint"
-	"github.com/go-kratos/kratos/v2/internal/host"
-	"github.com/go-kratos/kratos/v2/internal/matcher"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 	xhttp "github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/gorilla/mux"
 )
 
 var (
@@ -26,7 +24,7 @@ var (
 	_ http.Handler         = (*Server)(nil)
 )
 
-// ServerOption is an HTTP server option.
+// ServerOption is an MQTT server option.
 type ServerOption func(*Server)
 
 // Timeout with server timeout.
@@ -43,7 +41,7 @@ func Middleware(m ...middleware.Middleware) ServerOption {
 	}
 }
 
-// Filter with HTTP middleware option.
+// Filter with MQTT middleware option.
 func Filter(filters ...xhttp.FilterFunc) ServerOption {
 	return func(o *Server) {
 		o.filters = filters
@@ -54,13 +52,6 @@ func Filter(filters ...xhttp.FilterFunc) ServerOption {
 func RequestVarsDecoder(dec xhttp.DecodeRequestFunc) ServerOption {
 	return func(o *Server) {
 		o.decVars = dec
-	}
-}
-
-// RequestQueryDecoder with request decoder.
-func RequestQueryDecoder(dec xhttp.DecodeRequestFunc) ServerOption {
-	return func(o *Server) {
-		o.decQuery = dec
 	}
 }
 
@@ -94,13 +85,6 @@ func StrictSlash(strictSlash bool) ServerOption {
 	}
 }
 
-// PathPrefix with mux's PathPrefix, router will be replaced by a subrouter that start with prefix.
-func PathPrefix(prefix string) ServerOption {
-	return func(s *Server) {
-		s.router = s.router.PathPrefix(prefix).Subrouter()
-	}
-}
-
 func NotFoundHandler(handler http.Handler) ServerOption {
 	return func(s *Server) {
 		s.router.NotFoundHandler = handler
@@ -113,47 +97,88 @@ func MethodNotAllowedHandler(handler http.Handler) ServerOption {
 	}
 }
 
-// Server is an MQTT  Topic Route server wrapper.
-type Server struct {
-	mqttClient  *mqtt.Client
-	err         error
-	timeout     time.Duration
-	filters     []xhttp.FilterFunc
-	middleware  matcher.Matcher
-	decVars     xhttp.DecodeRequestFunc
-	decQuery    xhttp.DecodeRequestFunc
-	decBody     xhttp.DecodeRequestFunc
-	enc         xhttp.EncodeResponseFunc
-	ene         xhttp.EncodeErrorFunc
-	strictSlash bool
-	router      *mux.Router
+func WithClientOption(option *mqtt.ClientOptions) ServerOption {
+	return func(s *Server) {
+		s.clientOption = option
+	}
 }
 
-// NewServer creates an HTTP server by options.
+// Server is an MQTT  Topic Route server wrapper.
+type Server struct {
+	err          error
+	timeout      time.Duration
+	filters      []xhttp.FilterFunc
+	middleware   matcher.Matcher
+	decVars      xhttp.DecodeRequestFunc
+	decBody      xhttp.DecodeRequestFunc
+	enc          xhttp.EncodeResponseFunc
+	ene          xhttp.EncodeErrorFunc
+	strictSlash  bool
+	router       *mux.Router
+	Handler      http.Handler
+	clientOption *mqtt.ClientOptions
+	mqttClient   mqtt.Client
+}
+
+// NewServer creates an MQTT server by options.
 func NewServer(opts ...ServerOption) *Server {
 	srv := &Server{
-		timeout:     1 * time.Second,
-		middleware:  matcher.New(),
-		decVars:     xhttp.DefaultRequestVars,
-		decQuery:    xhttp.DefaultRequestQuery,
-		decBody:     xhttp.DefaultRequestDecoder,
-		enc:         xhttp.DefaultResponseEncoder,
-		ene:         xhttp.DefaultErrorEncoder,
-		strictSlash: true,
-		router:      mux.NewRouter(),
+		clientOption: mqtt.NewClientOptions(),
+		timeout:      1 * time.Second,
+		middleware:   matcher.New(),
+		decVars:      xhttp.DefaultRequestVars,
+		decBody:      xhttp.DefaultRequestDecoder,
+		enc:          xhttp.DefaultResponseEncoder,
+		ene:          xhttp.DefaultErrorEncoder,
+		strictSlash:  true,
+		router:       mux.NewRouter(),
 	}
-	srv.router.NotFoundHandler = http.DefaultServeMux
-	srv.router.MethodNotAllowedHandler = http.DefaultServeMux
+
+	srv.router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	for _, o := range opts {
 		o(srv)
 	}
 	srv.router.StrictSlash(srv.strictSlash)
 	srv.router.Use(srv.filter())
-	srv.Server = &http.Server{
-		Handler:   FilterChain(srv.filters...)(srv.router),
-		TLSConfig: srv.tlsConf,
-	}
+	srv.Handler = xhttp.FilterChain(srv.filters...)(srv.router)
+	srv.mqttClient = mqtt.NewClient(srv.clientOption)
 	return srv
+}
+
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	log.Warnf("mqtt route not found: %s", r.URL.Path)
+}
+func (s *Server) MQTTClient() mqtt.Client {
+	return s.mqttClient
+}
+func (s *Server) MQTTHandler() mqtt.MessageHandler {
+	return func(client mqtt.Client, msg mqtt.Message) {
+		// 包装http.ResponseWriter
+		rw := &MQTTResponseWriter{
+			header: http.Header{},
+			client: client,
+		}
+		// 包装http.Request
+		req := &http.Request{
+			Header: http.Header{
+				"Content-Type": []string{"application/json"},
+			},
+			Method: http.MethodPost,
+			URL:    &url.URL{Path: getUrlPathFromTopic(msg.Topic())},
+			Body:   io.NopCloser(bytes.NewReader(msg.Payload())),
+		}
+		ctx := WithClient(req.Context(), client)
+		ctx = WithMessage(ctx, msg)
+		req = req.WithContext(ctx)
+		s.Handler.ServeHTTP(rw, req)
+	}
+}
+
+func getUrlPathFromTopic(topic string) string {
+	if strings.HasPrefix(topic, "/") {
+		return topic
+	}
+	return "/noSlashRoot/" + topic
 }
 
 // Use uses a service middleware with selector.
@@ -193,32 +218,13 @@ func (s *Server) WalkHandle(handle func(method, path string, handler http.Handle
 	})
 }
 
-// Route registers an HTTP router.
-func (s *Server) Route(prefix string, filters ...FilterFunc) *Router {
+// Route registers an MQTT router.
+func (s *Server) Route(prefix string, filters ...xhttp.FilterFunc) *Router {
+	prefix = getUrlPathFromTopic(prefix)
 	return newRouter(prefix, s, filters...)
 }
 
-// Handle registers a new route with a matcher for the URL path.
-func (s *Server) Handle(path string, h http.Handler) {
-	s.router.Handle(path, h)
-}
-
-// HandlePrefix registers a new route with a matcher for the URL path prefix.
-func (s *Server) HandlePrefix(prefix string, h http.Handler) {
-	s.router.PathPrefix(prefix).Handler(h)
-}
-
-// HandleFunc registers a new route with a matcher for the URL path.
-func (s *Server) HandleFunc(path string, h http.HandlerFunc) {
-	s.router.HandleFunc(path, h)
-}
-
-// HandleHeader registers a new route with a matcher for the header.
-func (s *Server) HandleHeader(key, val string, h http.HandlerFunc) {
-	s.router.Headers(key, val).Handler(h)
-}
-
-// ServeHTTP should write reply headers and data to the ResponseWriter and then return.
+// ServeMQTT should write reply headers and data to the ResponseWriter and then return.
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	s.Handler.ServeHTTP(res, req)
 }
@@ -244,15 +250,11 @@ func (s *Server) filter() mux.MiddlewareFunc {
 			}
 
 			tr := &Transport{
-				operation:    pathTemplate,
-				pathTemplate: pathTemplate,
-				reqHeader:    headerCarrier(req.Header),
-				replyHeader:  headerCarrier(w.Header()),
-				request:      req,
-				response:     w,
-			}
-			if s.endpoint != nil {
-				tr.endpoint = s.endpoint.String()
+				operation:   pathTemplate,
+				reqHeader:   headerCarrier(req.Header),
+				replyHeader: headerCarrier(w.Header()),
+				request:     req,
+				response:    w,
 			}
 			tr.request = req.WithContext(transport.NewServerContext(ctx, tr))
 			next.ServeHTTP(w, tr.request)
@@ -260,61 +262,32 @@ func (s *Server) filter() mux.MiddlewareFunc {
 	}
 }
 
-// Endpoint return a real address to registry endpoint.
-// examples:
-//
-//	https://127.0.0.1:8000
-//	Legacy: http://127.0.0.1:8000?isSecure=false
-func (s *Server) Endpoint() (*url.URL, error) {
-	if err := s.listenAndEndpoint(); err != nil {
-		return nil, err
-	}
-	return s.endpoint, nil
-}
-
-// Start start the HTTP server.
+// Start start the MQTT server.
 func (s *Server) Start(ctx context.Context) error {
-	if err := s.listenAndEndpoint(); err != nil {
-		return err
+	log.Info("[MQTT] server starting")
+	token := s.mqttClient.Connect()
+	if !token.WaitTimeout(s.timeout) {
+		log.Errorf("mqtt connect wait timeout, address: %s", s.clientOption.Servers[0].String())
 	}
-	s.BaseContext = func(net.Listener) context.Context {
-		return ctx
-	}
-	log.Infof("[HTTP] server listening on: %s", s.lis.Addr().String())
-	var err error
-	if s.tlsConf != nil {
-		err = s.ServeTLS(s.lis, "", "")
-	} else {
-		err = s.Serve(s.lis)
-	}
-	if !errors.Is(err, http.ErrServerClosed) {
-		return err
+	if token.Error() != nil {
+		log.Errorf("mqtt connect error, %s", token.Error().Error())
 	}
 	return nil
 }
 
-// Stop stop the HTTP server.
+// Stop stop the MQTT server.
 func (s *Server) Stop(ctx context.Context) error {
-	log.Info("[HTTP] server stopping")
+	log.Info("[MQTT] server stopping")
+	if s.mqttClient != nil {
+		s.mqttClient.Disconnect(1000)
+	}
 	return s.Shutdown(ctx)
 }
 
-func (s *Server) listenAndEndpoint() error {
-	if s.lis == nil {
-		lis, err := net.Listen(s.network, s.address)
-		if err != nil {
-			s.err = err
-			return err
-		}
-		s.lis = lis
-	}
-	if s.endpoint == nil {
-		addr, err := host.Extract(s.address, s.lis)
-		if err != nil {
-			s.err = err
-			return err
-		}
-		s.endpoint = endpoint.NewEndpoint(endpoint.Scheme("http", s.tlsConf != nil), addr)
-	}
-	return s.err
+func (s *Server) Endpoint() (*url.URL, error) {
+	return &url.URL{Scheme: "mqtt", Host: s.clientOption.Servers[0].String()}, nil
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	return nil
 }

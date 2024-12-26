@@ -121,9 +121,9 @@ func (v PrinterVisitor) VisitField(f pgs.Field) (pgs.Visitor, error) {
 func (v PrinterVisitor) VisitMethod(m pgs.Method) (pgs.Visitor, error) {
 	v.writeLeaf(m.Name().String())
 	options := m.Descriptor().Options
-	if proto.HasExtension(options, mq.E_Mq) {
-		extValue := proto.GetExtension(options, mq.E_Mq)
-		mqRule := extValue.(*mq.MQRule)
+	if proto.HasExtension(options, mq.E_Mqtt) {
+		extValue := proto.GetExtension(options, mq.E_Mqtt)
+		mqRule := extValue.(*mq.MQTTRule)
 		v.writeLeaf(fmt.Sprintf("MQRule: %v\n", mqRule))
 		//.writeLeaf(fmt.Sprintf("MQRule: %v\n", mqRule))
 	}

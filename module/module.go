@@ -27,7 +27,7 @@ func (m *mod) InitContext(c pgs.BuildContext) {
 	tpl := template.New("mq").Funcs(map[string]interface{}{
 		"package": m.Context.PackageName,
 		"name":    m.Context.Name,
-		"mqrule":  m.MQRule,
+		"mqrule":  m.MQTTRule,
 		// "marshaler":   p.marshaler,
 		// "unmarshaler": p.unmarshaler,
 	})
@@ -39,21 +39,21 @@ func (mod) Name() string {
 	return "gomq"
 }
 
-func (mod) MQRule(method pgs.Method) *mq.MQRule {
+func (mod) MQTTRule(method pgs.Method) *mq.MQTTRule {
 	desc := method.Descriptor()
 	if desc == nil {
-		return &mq.MQRule{}
+		return &mq.MQTTRule{}
 	}
 	options := desc.Options
 	if options == nil {
-		return &mq.MQRule{}
+		return &mq.MQTTRule{}
 	}
-	if proto.HasExtension(options, mq.E_Mq) {
-		extValue := proto.GetExtension(options, mq.E_Mq)
-		mqRule := extValue.(*mq.MQRule)
+	if proto.HasExtension(options, mq.E_Mqtt) {
+		extValue := proto.GetExtension(options, mq.E_Mqtt)
+		mqRule := extValue.(*mq.MQTTRule)
 		return mqRule
 	}
-	return &mq.MQRule{}
+	return &mq.MQTTRule{}
 }
 
 func (m mod) Execute(targets map[string]pgs.File, pkgs map[string]pgs.Package) []pgs.Artifact {

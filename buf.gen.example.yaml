@@ -5,10 +5,10 @@ plugins:
     out: example
     opt: paths=source_relative
   - local: protoc-gen-debug
-    out: example
-    opt: example
+    out: example/gencode
+    opt: example/gencode
   - local: protoc-gen-gomq
     out: example
     opt: paths=source_relative
 inputs:
-  - directory: example
+  - directory: example/gencode
