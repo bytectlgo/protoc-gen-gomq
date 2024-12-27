@@ -1,10 +1,7 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"os"
-	"os/signal"
 
 	"github.com/bytectlgo/protoc-gen-gomq/transport/mqtt"
 	pmqtt "github.com/eclipse/paho.mqtt.golang"
@@ -19,16 +16,26 @@ type ReqInfo struct {
 	Device   string `json:"device"`
 }
 
-func main() {
+func NewMQTTSever(
+// exampleMQServer ExampleMQServer,
+) *mqtt.Server {
+	var subscribeMQTTFn mqtt.SubscribeMQTTFn
 	opts := pmqtt.NewClientOptions()
 	opts.OnConnectionLost = func(client pmqtt.Client, err error) {
-		fmt.Println("Connection lost to MQTT server")
+		reader := client.OptionsReader()
+		fmt.Printf("mqtt lost connect client id: %v\n", reader.ClientID())
 	}
 	opts.OnReconnecting = func(client pmqtt.Client, options *pmqtt.ClientOptions) {
-		fmt.Println("Reconnecting to MQTT server")
+		fmt.Printf("mqtt reconnecting client id: %v\n", options.ClientID)
 	}
 	opts.OnConnect = func(client pmqtt.Client) {
-		fmt.Println("Connected to MQTT server")
+		fmt.Println("mqtt connected")
+		// 定阅消息
+		if subscribeMQTTFn == nil {
+			fmt.Println("subscribeTopic is nil")
+			return
+		}
+		// SubscribeExampleMQServer(subscribeMQTTFn)
 	}
 	opts.AddBroker("tcp://localhost:1883")
 	opts.SetClientID("server")
@@ -41,17 +48,13 @@ func main() {
 		fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 	})
 	server := mqtt.NewServer(mqtt.WithClientOption(opts))
-	server.Start(context.Background())
-	topic := "/test/{product}/{device}"
-	subscribeTopic := mqtt.MakeSubscribeFn(server)
-	subscribeTopic(topic, 1)
-	route := server.Route("/")
-	route.POST(topic, info)
+	// 赋值定阅函数
+	subscribeMQTTFn = server.MakeSubscribeMQTTFn()
+	/// 注册路由
+	//route := server.Route("/")
+	// route.POST(topic, info)
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
-	<-sig
-	server.Stop(context.Background())
+	return server
 }
 
 func info(ctx mqtt.Context) error {
@@ -68,6 +71,7 @@ func info(ctx mqtt.Context) error {
 		log.Errorf("failed to bind vars: %v", err)
 		return err
 	}
+
 	log.Infof("req: %+v", req)
 	replyTopic := msg.Topic() + "/reply"
 	ctx.Response().Header().Set(mqtt.MQTT_REPLY_QOS_HEADER, "1")

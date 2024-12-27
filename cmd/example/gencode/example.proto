@@ -22,6 +22,26 @@ service ExampleMQ {
             reply_topic : "/device/:device_id/property_reply"
         };
     }
+    // // 设备属性,事件上报
+    // rpc EventPost(ThingReq) returns (Reply) {
+    //     option (google.api.http) = {
+    //         get : "$share/thing//sys/:appId/:productKey/:deviceKey/thing/event/:action/post"
+    //     };
+    // }
+
+    // // 服务指令下发
+    // rpc ServiceRequest(ThingReq) returns (Reply) {
+    //     option (google.api.http) = {
+    //         get : "$share/thing//device/:appId/:productKey/:deviceKey/thing/service/*action"
+    //     };
+    // }
+
+    // // 服务指令回复
+    // rpc ServiceReply(ThingReq) returns (Reply) {
+    //     option (google.api.http) = {
+    //         get : "$share/thing//sys/:appId/:productKey/:deviceKey/thing/service/*action"
+    //     };
+    // }
 }
 
 message DevicePropertyulish {

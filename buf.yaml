@@ -6,7 +6,8 @@ version: v2
 modules:
   - path: proto
     name: buf.build/bytectlgo/proto
-  - path: example
+  - path: cmd/example
+
 breaking:
   use:
     - FILE

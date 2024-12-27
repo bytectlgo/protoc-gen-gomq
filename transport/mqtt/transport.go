@@ -15,6 +15,7 @@ type Transporter interface {
 	transport.Transporter
 	Request() *http.Request
 	Client() *mqtt.Client
+	Message() *mqtt.Message
 }
 
 // Transport is an MQTT transport.
@@ -26,6 +27,7 @@ type Transport struct {
 	request     *http.Request
 	response    http.ResponseWriter
 	client      *mqtt.Client
+	message     *mqtt.Message
 }
 
 // Kind returns the transport kind.
@@ -63,6 +65,11 @@ func (tr *Transport) Client() *mqtt.Client {
 	return tr.client
 }
 
+// Message returns the MQTT message.
+func (tr *Transport) Message() *mqtt.Message {
+	return tr.message
+}
+
 // SetOperation sets the transport operation.
 func SetOperation(ctx context.Context, op string) {
 	if tr, ok := transport.FromServerContext(ctx); ok {
@@ -87,6 +94,16 @@ func ClientFromServerContext(ctx context.Context) (*mqtt.Client, bool) {
 	if tr, ok := transport.FromServerContext(ctx); ok {
 		if tr, ok := tr.(*Transport); ok {
 			return tr.client, true
+		}
+	}
+	return nil, false
+}
+
+// MessageFromServerContext returns message from context.
+func MessageFromServerContext(ctx context.Context) (*mqtt.Message, bool) {
+	if tr, ok := transport.FromServerContext(ctx); ok {
+		if tr, ok := tr.(*Transport); ok {
+			return tr.message, true
 		}
 	}
 	return nil, false

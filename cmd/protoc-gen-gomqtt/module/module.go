@@ -79,25 +79,25 @@ func (m mod) generate(f pgs.File) {
 const mqTpl = `package {{ package . }}
 
 import (
-	"github.com/bytectlgo/protoc-gen-gomq/genarate/mq"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/bytectlgo/protoc-gen-gomq/transport/mqtt"
 )
 
 
 {{- range .Services }}
 type {{ name .}} interface {
 	{{- range .Methods }}
-	{{ name .}}(mq.Context,*{{ name .Input}}) (*{{ name .Output}}, error)
+	{{ name .}}(context.Context,*{{ name .Input}}) (*{{ name .Output}}, error)
 	{{- end }}
 }
 {{- end }}
 
 {{- range .Services }}
-func Subscribe{{ name .}} (c mq.Client, m *mq.MQSubscribe) {
+func Subscribe{{ name .}} (subscribeMQTTFn mqtt.SubscribeMQTTFn) {
 	{{- range .Methods }}
 	{{- $mqrule := mqrule . }}
 	{{- if ne $mqrule.Topic "" }}
-	m.Subscribe(c," {{- $mqrule.Prefix }}{{- $mqrule.Topic }}",0)
+	subscribeMQTTFn("{{- $mqrule.Prefix }}{{- $mqrule.Topic }}",0)
 	{{- end }}
 	{{- end }}
 }
@@ -106,13 +106,13 @@ func Subscribe{{ name .}} (c mq.Client, m *mq.MQSubscribe) {
 
 {{- range .Services }}
 {{- $serviceName := name . }}
-func Register{{ $serviceName}} (s *mq.Server, srv {{ $serviceName}}) {
-	r := s.Route()
+func Register{{ $serviceName}} (s *mqtt.Server, srv {{ $serviceName}}) {
+	r := s.Route("/")
 	{{- range .Methods }}
 	{{- $mqrule := mqrule . }}
 
 	{{- if ne $mqrule.Topic "" }}
-	r.Handle(" {{- $mqrule.Prefix }}{{- $mqrule.Topic }}", _{{ name .}}_{{ name .}}MQ_Handler(srv))
+	r.POST(" {{- $mqrule.Prefix }}{{- $mqrule.Topic }}", _{{ $serviceName }}_{{ name .}}MQ_Handler(srv))
 	{{- end }}
 	{{- end }}
 }
@@ -123,20 +123,20 @@ func Register{{ $serviceName}} (s *mq.Server, srv {{ $serviceName}}) {
 {{- $serviceName := name . }}
 {{- range .Methods }}
 {{- $mqrule := mqrule . }}
-func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mq.Context)  {
-	return func(ctx mq.Context)  {
+func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt.Context) error {
+	return func(ctx mqtt.Context) error {
 		log.Debugf("receive mq topic:%v, body: %v", ctx.Message().Topic(), string(ctx.Message().Payload()))
 		in := &{{ name .Input}}{}
 		err := ctx.Bind(in)
 		if err != nil {
 			log.Error("bind error:", err)
-			return
+			return err
 		}
 		log.Debugf("receive mq topic:%v, in: %+v", ctx.Message().Topic(), in)
 		err = in.Validate()
 		if err != nil {
 			log.Error("validate error:", err)
-			return
+			return err
 		}
 		log.Debugf("receive mq request:%+v",in)
 		reply, err := srv.{{ name .}}(ctx, in)
@@ -148,8 +148,7 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mq.C
 		}
 		if err != nil {
 			log.Error("{{.Name}} error:", err)
-			ctx.ReplyErr(err)
-			return
+			return  err
 		}
 		{{- if ne $mqrule.ReplyTopic "" }}
 			// reply topic:{{ $mqrule.ReplyTopic }}
@@ -157,8 +156,7 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mq.C
 		err = ctx.Reply(reply)
 		if err != nil {
 			log.Error("{{.Name}} error:", err)
-			ctx.ReplyErr(err)
-			return
+			return err
 		}
 	}
 }

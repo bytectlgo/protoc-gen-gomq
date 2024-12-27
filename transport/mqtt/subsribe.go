@@ -4,7 +4,9 @@ import (
 	"strings"
 )
 
-func MakeSubscribeFn(s *Server) func(topic string, qos byte) error {
+type SubscribeMQTTFn func(topic string, qos byte) error
+
+func (s *Server) MakeSubscribeMQTTFn() SubscribeMQTTFn {
 	return func(topic string, qos byte) error {
 		subscribeTopic := getSubscribeTopic(topic)
 		c := s.MQTTClient()

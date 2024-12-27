@@ -1,10 +1,9 @@
 package main
 
 import (
+	"github.com/bytectlgo/protoc-gen-gomq/cmd/protoc-gen-gomqtt/module"
 	pgs "github.com/lyft/protoc-gen-star/v2"
 	pgsgo "github.com/lyft/protoc-gen-star/v2/lang/go"
-
-	"github.com/bytectlgo/protoc-gen-gomq/module"
 )
 
 func main() {
@@ -17,5 +16,4 @@ func main() {
 			pgsgo.GoImports(),
 			pgsgo.GoFmt()).
 		Render()
-
 }

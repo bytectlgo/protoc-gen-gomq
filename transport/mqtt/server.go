@@ -248,13 +248,16 @@ func (s *Server) filter() mux.MiddlewareFunc {
 				// /path/123 -> /path/{id}
 				pathTemplate, _ = route.GetPathTemplate()
 			}
-
+			msg, _ := MessageFromServerContext(req.Context())
+			client, _ := ClientFromServerContext(req.Context())
 			tr := &Transport{
 				operation:   pathTemplate,
 				reqHeader:   headerCarrier(req.Header),
 				replyHeader: headerCarrier(w.Header()),
 				request:     req,
 				response:    w,
+				message:     msg,
+				client:      client,
 			}
 			tr.request = req.WithContext(transport.NewServerContext(ctx, tr))
 			next.ServeHTTP(w, tr.request)

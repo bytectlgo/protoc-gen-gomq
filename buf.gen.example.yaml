@@ -2,13 +2,13 @@ version: v2
 plugins:
   # - remote: buf.build/protocolbuffers/go
   - local: protoc-gen-go
-    out: example
+    out: cmd/example
     opt: paths=source_relative
   - local: protoc-gen-debug
-    out: example/gencode
-    opt: example/gencode
-  - local: protoc-gen-gomq
-    out: example
+    out: cmd/example/gencode
+    opt: cmd/example/gencode
+  - local: protoc-gen-gomqtt
+    out: cmd/example
     opt: paths=source_relative
 inputs:
-  - directory: example/gencode
+  - directory: cmd/example/gencode
