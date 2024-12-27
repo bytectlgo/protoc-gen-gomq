@@ -2,11 +2,16 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"example/gencode"
 
 	"github.com/bytectlgo/protoc-gen-gomq/transport/mqtt"
 	pmqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/logging"
+	"github.com/go-kratos/kratos/v2/middleware/recovery"
+	"github.com/go-kratos/kratos/v2/middleware/validate"
 )
 
 func NewMQTTSever(
@@ -40,7 +45,12 @@ func NewMQTTSever(
 	opts.SetDefaultPublishHandler(func(client pmqtt.Client, msg pmqtt.Message) {
 		fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 	})
-	server := mqtt.NewServer(mqtt.WithClientOption(opts))
+	mid := mqtt.Middleware(
+		recovery.Recovery(),
+		validate.Validator(),
+		logging.Server(log.NewStdLogger(os.Stdout)),
+	)
+	server := mqtt.NewServer(mqtt.WithClientOption(opts), mid)
 	// 赋值定阅函数
 	subscribeMQTTFn = server.MakeSubscribeMQTTFn()
 	gencode.RegisterExampleMQServer(server, service)
