@@ -72,7 +72,8 @@ func (m mod) generate(f pgs.File) {
 	}
 
 	filePath := m.Context.OutputPath(f)
-	name := filePath.SetExt("").SetExt(".mq.go")
+	// name := filePath.SetExt("").SetExt(".mq.go")
+	name := filePath.SetExt(".mq.go")
 	m.AddGeneratorTemplateFile(name.String(), m.tpl, f)
 }
 
