@@ -3,21 +3,14 @@ package main
 import (
 	"fmt"
 
+	"example/gencode"
+
 	"github.com/bytectlgo/protoc-gen-gomq/transport/mqtt"
 	pmqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
-type ReqInfo struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Version  string `json:"version"`
-	Product  string `json:"product"`
-	Device   string `json:"device"`
-}
-
 func NewMQTTSever(
-// exampleMQServer ExampleMQServer,
+	service *Service,
 ) *mqtt.Server {
 	var subscribeMQTTFn mqtt.SubscribeMQTTFn
 	opts := pmqtt.NewClientOptions()
@@ -35,7 +28,7 @@ func NewMQTTSever(
 			fmt.Println("subscribeTopic is nil")
 			return
 		}
-		// SubscribeExampleMQServer(subscribeMQTTFn)
+		gencode.SubscribeExampleMQServer(subscribeMQTTFn)
 	}
 	opts.AddBroker("tcp://localhost:1883")
 	opts.SetClientID("server")
@@ -50,38 +43,6 @@ func NewMQTTSever(
 	server := mqtt.NewServer(mqtt.WithClientOption(opts))
 	// 赋值定阅函数
 	subscribeMQTTFn = server.MakeSubscribeMQTTFn()
-	/// 注册路由
-	//route := server.Route("/")
-	// route.POST(topic, info)
-
+	gencode.RegisterExampleMQServer(server, service)
 	return server
-}
-
-func info(ctx mqtt.Context) error {
-	msg := ctx.Message()
-	log.Infof("message: %+v", msg)
-	req := &ReqInfo{}
-	err := ctx.Bind(req)
-	if err != nil {
-		log.Errorf("failed to bind request: %v", err)
-		return err
-	}
-	err = ctx.BindVars(req)
-	if err != nil {
-		log.Errorf("failed to bind vars: %v", err)
-		return err
-	}
-
-	log.Infof("req: %+v", req)
-	replyTopic := msg.Topic() + "/reply"
-	ctx.Response().Header().Set(mqtt.MQTT_REPLY_QOS_HEADER, "1")
-	ctx.Response().Header().Set(mqtt.MQTT_REPLY_RETAIN_HEADER, "false")
-	ctx.JSON(replyTopic, &ReqInfo{
-		Username: "use2222",
-		Password: "password2222",
-		Version:  "1.0.0",
-		Product:  "product2222",
-		Device:   "device2222",
-	})
-	return nil
 }

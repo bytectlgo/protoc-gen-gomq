@@ -9,7 +9,9 @@ import (
 
 func main() {
 	fmt.Println("hello")
-	server := NewMQTTSever()
+	server := NewMQTTSever(
+		&Service{},
+	)
 	server.Start(context.Background())
 
 	sig := make(chan os.Signal, 1)

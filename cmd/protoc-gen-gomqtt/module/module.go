@@ -112,7 +112,7 @@ func Register{{ $serviceName}} (s *mqtt.Server, srv {{ $serviceName}}) {
 	{{- $mqrule := mqrule . }}
 
 	{{- if ne $mqrule.Topic "" }}
-	r.POST(" {{- $mqrule.Prefix }}{{- $mqrule.Topic }}", _{{ $serviceName }}_{{ name .}}MQ_Handler(srv))
+	r.POST("{{- $mqrule.Topic }}", _{{ $serviceName }}_{{ name .}}MQ_Handler(srv))
 	{{- end }}
 	{{- end }}
 }
@@ -132,7 +132,11 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 			log.Error("bind error:", err)
 			return err
 		}
-		log.Debugf("receive mq topic:%v, in: %+v", ctx.Message().Topic(), in)
+		err = ctx.BindVars(in)
+		if err != nil {
+			log.Error("bind vars error:", err)
+			return err
+		}
 		err = in.Validate()
 		if err != nil {
 			log.Error("validate error:", err)
@@ -151,13 +155,17 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 			return  err
 		}
 		{{- if ne $mqrule.ReplyTopic "" }}
-			// reply topic:{{ $mqrule.ReplyTopic }}
+			// ctx.Response().Header().Set(mqtt.MQTT_REPLY_QOS_HEADER, "1")
+			// ctx.Response().Header().Set(mqtt.MQTT_REPLY_RETAIN_HEADER, "false")
+			pattern := "{{- $mqrule.ReplyTopic }}"
+			topic := binding.EncodeURL(pattern, in, false)
+			err = ctx.JSON(topic, reply)
+			if err != nil {
+				log.Error("{{.Name}} error:", err)
+				return err
+			}
 		{{- end }}
-		err = ctx.Reply(reply)
-		if err != nil {
-			log.Error("{{.Name}} error:", err)
-			return err
-		}
+		return nil
 	}
 }
 {{- end }}

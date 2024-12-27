@@ -7,6 +7,9 @@ plugins:
   - local: protoc-gen-debug
     out: cmd/example/gencode
     opt: cmd/example/gencode
+  - local: protoc-gen-validate
+    out: cmd/example
+    opt: paths=source_relative,lang=go
   - local: protoc-gen-gomqtt
     out: cmd/example
     opt: paths=source_relative

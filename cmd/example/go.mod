@@ -5,6 +5,7 @@ go 1.23.3
 require (
 	github.com/bytectlgo/protoc-gen-gomq v0.0.0-20241226102852-d7e061cd0676
 	github.com/eclipse/paho.mqtt.golang v1.5.0
+	github.com/envoyproxy/protoc-gen-validate v1.0.2
 	github.com/go-kratos/kratos/v2 v2.8.3
 	google.golang.org/protobuf v1.35.2
 )

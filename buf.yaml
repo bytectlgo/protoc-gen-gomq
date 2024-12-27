@@ -7,9 +7,8 @@ modules:
   - path: proto
     name: buf.build/bytectlgo/proto
   - path: cmd/example
-
 breaking:
   use:
     - FILE
-# deps:
-#   - buf.build/googleapis/googleapis
+deps:
+  - buf.build/envoyproxy/protoc-gen-validate

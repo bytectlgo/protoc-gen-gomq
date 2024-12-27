@@ -4,62 +4,67 @@ syntax = "proto3";
 package example;
 
 import "mq/mqtt.proto";
+import "validate/validate.proto";
+import "google/protobuf/struct.proto";
 
-option go_package = "github.com/bytectlgo/protoc-gen-gomq/example;example";
+option go_package = "github.com/bytectlgo/protoc-gen-gomq/gencode;gencode";
 
 service ExampleMQ {
-    rpc DeviceInfo(DeviceInfoPulish) returns (DeviceInfoReply) {
+    // 设备属性,事件上报
+    rpc EventPost(ThingReq) returns (Reply) {
         option (mq.mqtt) = {
             prefix : "$share/device/"
-            topic : "/$SYS/brokers/:node/clients/:clientId/connected"
-            reply_topic : "/$SYS/brokers/:node/clients/:clientId/connected_reply"
+            topic : "/device/{deviceKey}/event/{action}/post"
+            reply_topic : "/device/{deviceKey}/event/{action}/post_reply"
         };
     }
-    rpc DeviceProperty(DevicePropertyulish) returns (DevicePropertyReply) {
+    // 服务指令下发
+    rpc ServiceRequest(ThingReq) returns (Reply) {
         option (mq.mqtt) = {
             prefix : "$share/device/"
-            topic : "/device/:device_id/property"
-            reply_topic : "/device/:device_id/property_reply"
+            topic : "/device/{deviceKey}/service/{action}"
+            reply_topic : "/device/{deviceKey}/service/{action}_reply"
         };
     }
-    // // 设备属性,事件上报
-    // rpc EventPost(ThingReq) returns (Reply) {
-    //     option (google.api.http) = {
-    //         get : "$share/thing//sys/:appId/:productKey/:deviceKey/thing/event/:action/post"
-    //     };
-    // }
 
-    // // 服务指令下发
-    // rpc ServiceRequest(ThingReq) returns (Reply) {
-    //     option (google.api.http) = {
-    //         get : "$share/thing//device/:appId/:productKey/:deviceKey/thing/service/*action"
-    //     };
-    // }
-
-    // // 服务指令回复
-    // rpc ServiceReply(ThingReq) returns (Reply) {
-    //     option (google.api.http) = {
-    //         get : "$share/thing//sys/:appId/:productKey/:deviceKey/thing/service/*action"
-    //     };
-    // }
+    // 服务指令回复
+    rpc ServiceReply(ThingReq) returns (Reply) {
+        option (mq.mqtt) = {
+            prefix : "$share/device/"
+            topic : "/device/{deviceKey}/service/{action}"
+            reply_topic : "/device/{deviceKey}/service/{action}_reply"
+        };
+    }
 }
 
-message DevicePropertyulish {
-    string device_id = 1;
-    string device_name = 2;
-    string status = 3;
+message ThingReq {
+    // 产品Key.
+    string productKey = 1 [ (validate.rules).string = {pattern : "^[0-9A-Za-z]{1,64}$"} ];
+    // 设备Key.
+    string deviceKey = 2 [ (validate.rules).string = {pattern : "^[0-9A-Za-z-]{1,64}$"} ];
+    // 动作
+    string action = 3;
+    // 消息id.
+    string id = 4;
+    // 模型版本.
+    string version = 5;
+    // 请求方法.
+    string method = 6;
+    // 时间戳.
+    int64 timestamp = 7;
+    // 请求参数.
+    google.protobuf.Struct params = 8;
 }
 
-message DeviceInfoPulish {
-    string device_id = 1;
-    string device_name = 2;
-}
-message DeviceInfoReply {
-    string code = 1;
-    string msg = 2;
-}
-
-message DevicePropertyReply {
-    string code = 1;
-    string msg = 2;
+message Reply {
+    // 消息id.
+    string id = 1;
+    // 错误码
+    int32 code = 2;
+    // 时间戳
+    int64 timestamp = 3;
+    // 方法.
+    string method = 4;
+    // 返回参数.
+    google.protobuf.Struct data = 5;
 }
