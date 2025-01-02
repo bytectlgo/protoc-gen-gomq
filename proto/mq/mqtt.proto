@@ -15,5 +15,9 @@ extend google.protobuf.MethodOptions {
 message MQTTRule {
     string prefix = 1;
     string topic = 2;
-    string reply_topic = 3;
+    int32 qos = 3;
+    bool retain = 4;
+    string reply_topic = 5;
+    int32 reply_qos = 6;
+    bool reply_retain = 7;
 }

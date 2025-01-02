@@ -15,7 +15,10 @@ service ExampleMQ {
         option (mq.mqtt) = {
             prefix : "$share/device/"
             topic : "/device/{deviceKey}/event/{action}/post"
+            // qos : 1
             reply_topic : "/device/{deviceKey}/event/{action}/post_reply"
+            // reply_qos : 1
+            // reply_retain : false
         };
     }
     // 服务指令下发
@@ -23,7 +26,10 @@ service ExampleMQ {
         option (mq.mqtt) = {
             prefix : "$share/device/"
             topic : "/device/{deviceKey}/service/{action}"
+            // qos : 1
             reply_topic : "/device/{deviceKey}/service/{action}_reply"
+            // reply_qos : 1
+            // reply_retain : false
         };
     }
 
@@ -32,7 +38,11 @@ service ExampleMQ {
         option (mq.mqtt) = {
             prefix : "$share/device/"
             topic : "/device/{deviceKey}/service/{action}"
+            qos : 1
+            retain : true
             reply_topic : "/device/{deviceKey}/service/{action}_reply"
+            reply_qos : 1
+            reply_retain : true
         };
     }
 }

@@ -98,7 +98,7 @@ func Subscribe{{ name .}} (subscribeMQTTFn mqtt.SubscribeMQTTFn) {
 	{{- range .Methods }}
 	{{- $mqrule := mqrule . }}
 	{{- if ne $mqrule.Topic "" }}
-	subscribeMQTTFn("{{- $mqrule.Prefix }}{{- $mqrule.Topic }}",0)
+	subscribeMQTTFn("{{- $mqrule.Prefix }}{{- $mqrule.Topic }}",{{- $mqrule.Qos }})
 	{{- end }}
 	{{- end }}
 }
@@ -119,7 +119,6 @@ func Register{{ $serviceName}} (s *mqtt.Server, srv {{ $serviceName}}) {
 }
 {{- end }}
 
-
 {{- range .Services }}
 {{- $serviceName := name . }}
 {{- range .Methods }}
@@ -138,26 +137,21 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 			log.Error("bind vars error:", err)
 			return err
 		}
-		err = in.Validate()
-		if err != nil {
-			log.Error("validate error:", err)
-			return err
-		}
-		log.Debugf("receive mq request:%+v",in)
-		reply, err := srv.{{ name .}}(ctx, in)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.{{ name .}}(ctx, req.(*{{ name .Input}}))
+		})
+		reply, err := h(ctx, in)
 		if reply == nil {
 			log.Debugf(" mq topic:%v, no need reply", ctx.Message().Topic())
-			if err != nil {
-				log.Error("{{.Name}} error:", err)
-			}
+			return err
 		}
 		if err != nil {
-			log.Error("{{.Name}} error:", err)
+			log.Error("{{.Name}}:", err)
 			return  err
 		}
 		{{- if ne $mqrule.ReplyTopic "" }}
-			// ctx.Response().Header().Set(mqtt.MQTT_REPLY_QOS_HEADER, "1")
-			// ctx.Response().Header().Set(mqtt.MQTT_REPLY_RETAIN_HEADER, "false")
+			ctx.Response().Header().Set(mqtt.MQTT_REPLY_QOS_HEADER, "{{- $mqrule.ReplyQos }}")
+			ctx.Response().Header().Set(mqtt.MQTT_REPLY_RETAIN_HEADER, "{{- $mqrule.ReplyRetain }}")
 			pattern := "{{- $mqrule.ReplyTopic }}"
 			topic := binding.EncodeURL(pattern, in, false)
 			err = ctx.JSON(topic, reply)
@@ -168,6 +162,94 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 		{{- end }}
 		return nil
 	}
+}
+{{- end }}
+{{- end }}
+
+{{- range .Services }}
+{{- $serviceName := name . }}
+func ClientSubscribe{{ $serviceName}} (subscribeMQTTFn mqtt.SubscribeMQTTFn) {
+	{{- range .Methods }}
+	{{- $mqrule := mqrule . }}
+	{{- if ne $mqrule.ReplyTopic "" }}
+	subscribeMQTTFn("{{- $mqrule.ReplyTopic }}",{{- $mqrule.ReplyQos }})
+	{{- end }}
+	{{- end }}
+}
+{{- end }}
+
+{{- range .Services }}
+{{- $serviceName := name . }}
+func ClientRegister{{ $serviceName}} (s *mqtt.Server, srv Client{{ $serviceName}}) {
+	r := s.Route("/")
+	{{- range .Methods }}
+	{{- $mqrule := mqrule . }}
+
+	{{- if ne $mqrule.ReplyTopic "" }}
+	r.POST("{{- $mqrule.ReplyTopic }}", _Client{{ $serviceName }}_{{ name .}}MQ_Handler(srv))
+	{{- end }}
+	{{- end }}
+}
+{{- end }}
+
+{{- range .Services }}
+type Client{{ name .}} interface {
+	{{- range .Methods }}
+	Client{{ name .}}(context.Context,*{{ name .Output}})  error
+	{{- end }}
+}
+{{- end }}
+
+
+{{- range .Services }}
+{{- $serviceName := name . }}
+{{- range .Methods }}
+{{- $mqrule := mqrule . }}
+func _Client{{ $serviceName }}_{{ name .}}MQ_Handler(srv Client{{ $serviceName }}) func(mqtt.Context) error {
+	return func(ctx mqtt.Context) error {
+		log.Debugf("receive mq topic:%v, body: %v", ctx.Message().Topic(), string(ctx.Message().Payload()))
+		in := &{{ name .Output}}{}
+		err := ctx.Bind(in)
+		if err != nil {
+			log.Error("bind error:", err)
+			return err
+		}
+		err = ctx.BindVars(in)
+		if err != nil {
+			log.Error("bind vars error:", err)
+			return err
+		}
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			err := srv.Client{{ name .}}(ctx, req.(*{{ name .Output}}))
+			return nil, err
+		})
+		_, err = h(ctx, in)
+		return err
+	}
+}
+{{- end }}
+{{- end }}
+
+
+{{- range .Services }}
+{{- $serviceName := name . }}
+type Client{{ $serviceName}}Impl struct {
+	client *mqtt.Client
+}
+func NewClient{{ $serviceName}}Impl(client *mqtt.Client) *Client{{ $serviceName}}Impl {
+	return &Client{{ $serviceName}}Impl{
+		client: client,
+	}
+}		
+{{- end }}
+{{- range .Services }}
+{{- $serviceName := name . }}
+{{- range .Methods }}
+{{- $mqrule := mqrule . }}
+func (c *Client{{ $serviceName }}Impl) {{ name .}}(ctx context.Context, in *{{ name .Input}}) error {
+	topic := "{{- $mqrule.Topic }}"
+	path := binding.EncodeURL(topic, in, false)
+	return c.client.Publish(ctx, path, {{- $mqrule.Qos }}, {{- $mqrule.Retain }}, in)	
 }
 {{- end }}
 {{- end }}

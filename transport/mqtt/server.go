@@ -153,12 +153,10 @@ func (s *Server) MQTTClient() mqtt.Client {
 }
 func (s *Server) MQTTHandler() mqtt.MessageHandler {
 	return func(client mqtt.Client, msg mqtt.Message) {
-		// 包装http.ResponseWriter
 		rw := &MQTTResponseWriter{
 			header: http.Header{},
 			client: client,
 		}
-		// 包装http.Request
 		req := &http.Request{
 			Header: http.Header{
 				"Content-Type": []string{"application/json"},
@@ -274,6 +272,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	if token.Error() != nil {
 		log.Errorf("mqtt connect error, %s", token.Error().Error())
+		panic(token.Error())
 	}
 	return nil
 }

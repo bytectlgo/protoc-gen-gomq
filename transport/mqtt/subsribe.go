@@ -2,7 +2,22 @@ package mqtt
 
 import (
 	"strings"
+	"time"
 )
+
+type PublishMQTTFn func(topic string, qos byte, retain bool, payload []byte) error
+
+func (s *Server) MakePublishMQTTFn(timeout time.Duration) PublishMQTTFn {
+	return func(topic string, qos byte, retain bool, payload []byte) error {
+		c := s.MQTTClient()
+		t := c.Publish(topic, qos, retain, payload)
+		t.WaitTimeout(timeout)
+		if t.Error() != nil {
+			return t.Error()
+		}
+		return nil
+	}
+}
 
 type SubscribeMQTTFn func(topic string, qos byte) error
 
