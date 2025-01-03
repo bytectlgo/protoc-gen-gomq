@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"example/gencode"
@@ -17,20 +16,25 @@ import (
 func NewMQTTSever(
 	service *Service,
 ) *mqtt.Server {
+	glogger := log.With(log.NewStdLogger(os.Stdout),
+		"ts", log.DefaultTimestamp,
+		"caller", log.Caller(4),
+	)
+	log.SetLogger(glogger)
 	var subscribeMQTTFn mqtt.SubscribeMQTTFn
 	opts := pmqtt.NewClientOptions()
 	opts.OnConnectionLost = func(client pmqtt.Client, err error) {
 		reader := client.OptionsReader()
-		fmt.Printf("mqtt lost connect client id: %v\n", reader.ClientID())
+		log.Debugf("mqtt lost connect client id: %v", reader.ClientID())
 	}
 	opts.OnReconnecting = func(client pmqtt.Client, options *pmqtt.ClientOptions) {
-		fmt.Printf("mqtt reconnecting client id: %v\n", options.ClientID)
+		log.Debugf("mqtt reconnecting client id: %v", options.ClientID)
 	}
 	opts.OnConnect = func(client pmqtt.Client) {
-		fmt.Println("mqtt connected")
+		log.Debugf("mqtt connected")
 		// 定阅消息
 		if subscribeMQTTFn == nil {
-			fmt.Println("subscribeTopic is nil")
+			log.Debugf("subscribeTopic is nil")
 			return
 		}
 		gencode.SubscribeExampleMQServer(subscribeMQTTFn)
@@ -43,12 +47,12 @@ func NewMQTTSever(
 	opts.SetAutoReconnect(true)
 	opts.SetCleanSession(false)
 	opts.SetDefaultPublishHandler(func(client pmqtt.Client, msg pmqtt.Message) {
-		fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+		log.Debugf("Received message: %s from topic: %s", msg.Payload(), msg.Topic())
 	})
 	mid := mqtt.Middleware(
 		recovery.Recovery(),
+		logging.Server(glogger),
 		validate.Validator(),
-		logging.Server(log.NewStdLogger(os.Stdout)),
 	)
 	server := mqtt.NewServer(mqtt.WithClientOption(opts), mid)
 	// 赋值定阅函数

@@ -12,6 +12,8 @@ type Service struct {
 
 func (s *Service) EventPost(ctx context.Context, req *gencode.ThingReq) (*gencode.Reply, error) {
 	fmt.Println("EventPost", req)
+
+	// panic("test")
 	return &gencode.Reply{
 		Id:     req.Id,
 		Code:   0,

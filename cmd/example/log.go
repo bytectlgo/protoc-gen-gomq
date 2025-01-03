@@ -1,7 +1,6 @@
 package main
 
 import (
-	pmqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-kratos/kratos/v2/log"
 )
 
@@ -54,21 +53,21 @@ func (l *loggerCritical) Printf(format string, v ...interface{}) {
 }
 
 func init() {
-	helper := log.NewHelper(log.With(log.DefaultLogger, "module", "pmqtt"))
-	logDebug := &loggerDebug{
-		log: helper,
-	}
-	logError := &loggerError{
-		log: helper,
-	}
-	logWarn := &loggerWarn{
-		log: helper,
-	}
-	logCritical := &loggerCritical{
-		log: helper,
-	}
-	pmqtt.DEBUG = logDebug
-	pmqtt.WARN = logWarn
-	pmqtt.ERROR = logError
-	pmqtt.CRITICAL = logCritical
+	// helper := log.NewHelper(log.With(log.DefaultLogger, "module", "pmqtt"))
+	// logDebug := &loggerDebug{
+	// 	log: helper,
+	// }
+	// logError := &loggerError{
+	// 	log: helper,
+	// }
+	// logWarn := &loggerWarn{
+	// 	log: helper,
+	// }
+	// logCritical := &loggerCritical{
+	// 	log: helper,
+	// }
+	// pmqtt.DEBUG = logDebug
+	// pmqtt.WARN = logWarn
+	// pmqtt.ERROR = logError
+	// pmqtt.CRITICAL = logCritical
 }

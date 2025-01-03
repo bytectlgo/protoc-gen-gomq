@@ -125,39 +125,36 @@ func Register{{ $serviceName}} (s *mqtt.Server, srv {{ $serviceName}}) {
 {{- $mqrule := mqrule . }}
 func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt.Context) error {
 	return func(ctx mqtt.Context) error {
-		log.Debugf("receive mq topic:%v, body: %v", ctx.Message().Topic(), string(ctx.Message().Payload()))
 		in := &{{ name .Input}}{}
 		err := ctx.Bind(in)
 		if err != nil {
-			log.Error("bind error:", err)
-			return err
+			return fmt.Errorf("bind error:%v", err)
 		}
 		err = ctx.BindVars(in)
 		if err != nil {
-			log.Error("bind vars error:", err)
-			return err
-		}
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.{{ name .}}(ctx, req.(*{{ name .Input}}))
-		})
-		reply, err := h(ctx, in)
-		if reply == nil {
-			log.Debugf(" mq topic:%v, no need reply", ctx.Message().Topic())
-			return err
-		}
-		if err != nil {
-			log.Error("{{.Name}}:", err)
-			return  err
+			return fmt.Errorf("bind vars error:%v", err)
 		}
 		{{- if ne $mqrule.ReplyTopic "" }}
 			ctx.Response().Header().Set(mqtt.MQTT_REPLY_QOS_HEADER, "{{- $mqrule.ReplyQos }}")
 			ctx.Response().Header().Set(mqtt.MQTT_REPLY_RETAIN_HEADER, "{{- $mqrule.ReplyRetain }}")
 			pattern := "{{- $mqrule.ReplyTopic }}"
 			topic := binding.EncodeURL(pattern, in, false)
-			err = ctx.JSON(topic, reply)
+			ctx.Response().Header().Set(mqtt.MQTT_REPLY_TOPIC_HEADER, topic)
+		{{- end }}
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.{{ name .}}(ctx, req.(*{{ name .Input}}))
+		})
+		reply, err := h(ctx, in)
+		if reply == nil {
+			return err
+		}
+		if err != nil {
+			return fmt.Errorf("handler error:%v", err)
+		}
+		{{- if ne $mqrule.ReplyTopic "" }}
+			err = ctx.JSON(reply)
 			if err != nil {
-				log.Error("{{.Name}} error:", err)
-				return err
+				return fmt.Errorf("json error:%v", err)
 			}
 		{{- end }}
 		return nil
@@ -211,20 +208,21 @@ func _Client{{ $serviceName }}_{{ name .}}MQ_Handler(srv Client{{ $serviceName }
 		in := &{{ name .Output}}{}
 		err := ctx.Bind(in)
 		if err != nil {
-			log.Error("bind error:", err)
-			return err
+			return fmt.Errorf("bind error:%v", err)
 		}
 		err = ctx.BindVars(in)
 		if err != nil {
-			log.Error("bind vars error:", err)
-			return err
+			return fmt.Errorf("bind vars error:%v", err)
 		}
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			err := srv.Client{{ name .}}(ctx, req.(*{{ name .Output}}))
 			return nil, err
 		})
 		_, err = h(ctx, in)
-		return err
+		if err != nil {
+			return fmt.Errorf("handler error:%v", err)
+		}
+		return nil
 	}
 }
 {{- end }}

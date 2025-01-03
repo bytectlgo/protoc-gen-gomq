@@ -27,9 +27,9 @@ type Context interface {
 	Middleware(middleware.Handler) middleware.Handler
 	Bind(interface{}) error
 	BindVars(interface{}) error
-	JSON(string, interface{}) error
-	String(string, string) error
-	Stream(string, string, io.Reader) error
+	JSON(interface{}) error
+	String(string) error
+	Stream(string, io.Reader) error
 	Reset(http.ResponseWriter, *http.Request)
 }
 
@@ -101,15 +101,13 @@ func (c *wrapper) Returns(v interface{}, err error) error {
 	return c.router.srv.enc(&c.w, c.req, v)
 }
 
-func (c *wrapper) JSON(topic string, v interface{}) error {
+func (c *wrapper) JSON(v interface{}) error {
 	c.res.Header().Set("Content-Type", "application/json")
-	c.res.Header().Set(MQTT_REPLY_TOPIC_HEADER, topic)
 	return json.NewEncoder(c.res).Encode(v)
 }
 
-func (c *wrapper) String(topic string, text string) error {
+func (c *wrapper) String(text string) error {
 	c.res.Header().Set("Content-Type", "text/plain")
-	c.res.Header().Set(MQTT_REPLY_TOPIC_HEADER, topic)
 	_, err := c.res.Write([]byte(text))
 	if err != nil {
 		return err
@@ -117,9 +115,8 @@ func (c *wrapper) String(topic string, text string) error {
 	return nil
 }
 
-func (c *wrapper) Stream(topic string, contentType string, rd io.Reader) error {
+func (c *wrapper) Stream(contentType string, rd io.Reader) error {
 	c.res.Header().Set("Content-Type", contentType)
-	c.res.Header().Set(MQTT_REPLY_TOPIC_HEADER, topic)
 	_, err := io.Copy(c.res, rd)
 	return err
 }

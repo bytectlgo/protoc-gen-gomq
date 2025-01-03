@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 const (
@@ -24,12 +25,17 @@ func (rw *MQTTResponseWriter) Header() http.Header {
 }
 
 func (rw *MQTTResponseWriter) Write(b []byte) (int, error) {
-	t := rw.client.Publish(rw.getTopic(), rw.getQoS(), rw.getRetain(), b)
+	topic := rw.getTopic()
+	if topic == "" {
+		log.Warnf("topic is empty, body: %s", string(b))
+		return 0, nil
+	}
+	t := rw.client.Publish(topic, rw.getQoS(), rw.getRetain(), b)
 	t.Wait()
 	if t.Error() != nil {
-		return http.StatusBadRequest, t.Error()
+		return 0, t.Error()
 	}
-	return http.StatusOK, nil
+	return len(b), nil
 }
 func (rw *MQTTResponseWriter) getQoS() byte {
 	qos, err := strconv.ParseInt(rw.header.Get(MQTT_REPLY_QOS_HEADER), 10, 64)

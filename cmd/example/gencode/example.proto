@@ -10,71 +10,71 @@ import "google/protobuf/struct.proto";
 option go_package = "github.com/bytectlgo/protoc-gen-gomq/gencode;gencode";
 
 service ExampleMQ {
-    // 设备属性,事件上报
-    rpc EventPost(ThingReq) returns (Reply) {
-        option (mq.mqtt) = {
-            prefix : "$share/device/"
-            topic : "/device/{deviceKey}/event/{action}/post"
-            // qos : 1
-            reply_topic : "/device/{deviceKey}/event/{action}/post_reply"
-            // reply_qos : 1
-            // reply_retain : false
-        };
-    }
-    // 服务指令下发
-    rpc ServiceRequest(ThingReq) returns (Reply) {
-        option (mq.mqtt) = {
-            prefix : "$share/device/"
-            topic : "/device/{deviceKey}/service/{action}"
-            // qos : 1
-            reply_topic : "/device/{deviceKey}/service/{action}_reply"
-            // reply_qos : 1
-            // reply_retain : false
-        };
-    }
+  // 设备属性,事件上报
+  rpc EventPost(ThingReq) returns (Reply) {
+    option (mq.mqtt) = {
+      prefix : "$share/device/"
+      topic : "/device/{deviceKey}/event/{action}/post"
+      // qos : 1
+      reply_topic : "/device/{deviceKey}/event/{action}/post_reply"
+      // reply_qos : 1
+      // reply_retain : false
+    };
+  }
+  // 服务指令下发
+  rpc ServiceRequest(ThingReq) returns (Reply) {
+    option (mq.mqtt) = {
+      prefix : "$share/device/"
+      topic : "/device/{deviceKey}/service/{action}"
+      // qos : 1
+      reply_topic : "/device/{deviceKey}/service/{action}_reply"
+      // reply_qos : 1
+      // reply_retain : false
+    };
+  }
 
-    // 服务指令回复
-    rpc ServiceReply(ThingReq) returns (Reply) {
-        option (mq.mqtt) = {
-            prefix : "$share/device/"
-            topic : "/device/{deviceKey}/service/{action}"
-            qos : 1
-            retain : true
-            reply_topic : "/device/{deviceKey}/service/{action}_reply"
-            reply_qos : 1
-            reply_retain : true
-        };
-    }
+  // 服务指令回复
+  rpc ServiceReply(ThingReq) returns (Reply) {
+    option (mq.mqtt) = {
+      prefix : "$share/device/"
+      topic : "/device/{deviceKey}/service/{action}"
+      qos : 1
+      retain : true
+      reply_topic : "/device/{deviceKey}/service/{action}_reply"
+      reply_qos : 1
+      reply_retain : true
+    };
+  }
 }
 
 message ThingReq {
-    // 产品Key.
-    string productKey = 1 [ (validate.rules).string = {pattern : "^[0-9A-Za-z]{1,64}$"} ];
-    // 设备Key.
-    string deviceKey = 2 [ (validate.rules).string = {pattern : "^[0-9A-Za-z-]{1,64}$"} ];
-    // 动作
-    string action = 3;
-    // 消息id.
-    string id = 4;
-    // 模型版本.
-    string version = 5;
-    // 请求方法.
-    string method = 6;
-    // 时间戳.
-    int64 timestamp = 7;
-    // 请求参数.
-    google.protobuf.Struct params = 8;
+  // 产品Key.
+  string productKey = 1 [ (validate.rules).string = {pattern : "^[0-9A-Za-z]{1,64}$"} ];
+  // 设备Key.
+  string deviceKey = 2 [ (validate.rules).string = {pattern : "^[0-9A-Za-z-]{1,64}$"} ];
+  // 动作
+  string action = 3;
+  // 消息id.
+  string id = 4;
+  // 模型版本.
+  string version = 5;
+  // 请求方法.
+  string method = 6;
+  // 时间戳.
+  int64 timestamp = 7;
+  // 请求参数.
+  google.protobuf.Struct params = 8;
 }
 
 message Reply {
-    // 消息id.
-    string id = 1;
-    // 错误码
-    int32 code = 2;
-    // 时间戳
-    int64 timestamp = 3;
-    // 方法.
-    string method = 4;
-    // 返回参数.
-    google.protobuf.Struct data = 5;
+  // 消息id.
+  string id = 1;
+  // 错误码
+  int32 code = 2;
+  // 时间戳
+  int64 timestamp = 3;
+  // 方法.
+  string method = 4;
+  // 返回参数.
+  google.protobuf.Struct data = 5;
 }
