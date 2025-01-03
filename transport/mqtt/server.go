@@ -103,6 +103,12 @@ func WithClientOption(option *mqtt.ClientOptions) ServerOption {
 	}
 }
 
+func WithMustStart(mustStart bool) ServerOption {
+	return func(s *Server) {
+		s.mustStart = mustStart
+	}
+}
+
 // Server is an MQTT  Topic Route server wrapper.
 type Server struct {
 	err          error
@@ -118,6 +124,7 @@ type Server struct {
 	Handler      http.Handler
 	clientOption *mqtt.ClientOptions
 	mqttClient   mqtt.Client
+	mustStart    bool // 是否必须启动
 }
 
 // NewServer creates an MQTT server by options.
@@ -272,7 +279,10 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	if token.Error() != nil {
 		log.Errorf("mqtt connect error, %s", token.Error().Error())
-		panic(token.Error())
+		if s.mustStart {
+			panic(token.Error())
+		}
+		return token.Error()
 	}
 	return nil
 }

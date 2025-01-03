@@ -41,8 +41,9 @@ func NewMQTTSever(
 	}
 	opts.AddBroker("tcp://localhost:1883")
 	opts.SetClientID("server")
-	opts.SetUsername("user")
-	opts.SetPassword("password")
+	opts.SetCredentialsProvider(func() (username string, password string) {
+		return "user", "password"
+	})
 	opts.SetResumeSubs(true)
 	opts.SetAutoReconnect(true)
 	opts.SetCleanSession(false)
@@ -54,7 +55,12 @@ func NewMQTTSever(
 		logging.Server(glogger),
 		validate.Validator(),
 	)
-	server := mqtt.NewServer(mqtt.WithClientOption(opts), mid)
+	sopts := []mqtt.ServerOption{
+		mqtt.WithClientOption(opts),
+		mqtt.WithMustStart(true),
+		mid,
+	}
+	server := mqtt.NewServer(sopts...)
 	// 赋值定阅函数
 	subscribeMQTTFn = server.MakeSubscribeMQTTFn()
 	gencode.RegisterExampleMQServer(server, service)
