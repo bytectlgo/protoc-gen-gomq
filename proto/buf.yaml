@@ -4,10 +4,10 @@ version: v2
 #   use:
 #     - STANDARD
 modules:
-  - path: cmd/example
+  - path: mq
+    name: buf.build/bytectlgo/protoc-gen-gomq
 breaking:
   use:
     - FILE
 deps:
   - buf.build/envoyproxy/protoc-gen-validate
-  - buf.build/bytectlgo/protoc-gen-gomq
