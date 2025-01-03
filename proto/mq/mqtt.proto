@@ -8,16 +8,23 @@ import "google/protobuf/descriptor.proto";
 option go_package = "github.com/bytectlgo/protoc-gen-gomq/genarate/mq;mq";
 
 extend google.protobuf.MethodOptions {
-    // See `MQTTRule`.
-    MQTTRule mqtt = 7229572;
+  // See `MQTTRule`.
+  MQTTRule mqtt = 7229572;
 }
 
 message MQTTRule {
-    string prefix = 1;
-    string topic = 2;
-    int32 qos = 3;
-    bool retain = 4;
-    string reply_topic = 5;
-    int32 reply_qos = 6;
-    bool reply_retain = 7;
+  // topic prefix
+  string prefix = 1;
+  // topic
+  string topic = 2;
+  // qos
+  int32 qos = 3;
+  // retain
+  bool retain = 4;
+  // reply topic
+  string reply_topic = 5;
+  // reply qos
+  int32 reply_qos = 6;
+  // reply retain
+  bool reply_retain = 7;
 }

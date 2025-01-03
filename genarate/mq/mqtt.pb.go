@@ -22,14 +22,21 @@ const (
 )
 
 type MQTTRule struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Prefix        string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
-	Topic         string                 `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
-	Qos           int32                  `protobuf:"varint,3,opt,name=qos,proto3" json:"qos,omitempty"`
-	Retain        bool                   `protobuf:"varint,4,opt,name=retain,proto3" json:"retain,omitempty"`
-	ReplyTopic    string                 `protobuf:"bytes,5,opt,name=reply_topic,json=replyTopic,proto3" json:"reply_topic,omitempty"`
-	ReplyQos      int32                  `protobuf:"varint,6,opt,name=reply_qos,json=replyQos,proto3" json:"reply_qos,omitempty"`
-	ReplyRetain   bool                   `protobuf:"varint,7,opt,name=reply_retain,json=replyRetain,proto3" json:"reply_retain,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// topic prefix
+	Prefix string `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	// topic
+	Topic string `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
+	// qos
+	Qos int32 `protobuf:"varint,3,opt,name=qos,proto3" json:"qos,omitempty"`
+	// retain
+	Retain bool `protobuf:"varint,4,opt,name=retain,proto3" json:"retain,omitempty"`
+	// reply topic
+	ReplyTopic string `protobuf:"bytes,5,opt,name=reply_topic,json=replyTopic,proto3" json:"reply_topic,omitempty"`
+	// reply qos
+	ReplyQos int32 `protobuf:"varint,6,opt,name=reply_qos,json=replyQos,proto3" json:"reply_qos,omitempty"`
+	// reply retain
+	ReplyRetain   bool `protobuf:"varint,7,opt,name=reply_retain,json=replyRetain,proto3" json:"reply_retain,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
