@@ -94,11 +94,11 @@ type {{ name .}} interface {
 {{- end }}
 
 {{- range .Services }}
-func Subscribe{{ name .}} (subscribeMQTTFn mqtt.SubscribeMQTTFn) {
+func Subscribe{{ name .}} (groupPrefix string, subscribeMQTTFn mqtt.SubscribeMQTTFn) {
 	{{- range .Methods }}
 	{{- $mqrule := mqrule . }}
 	{{- if ne $mqrule.Topic "" }}
-	subscribeMQTTFn("{{- $mqrule.Prefix }}{{- $mqrule.Topic }}",{{- $mqrule.Qos }})
+	subscribeMQTTFn( groupPrefix + "{{- $mqrule.Topic }}",{{- $mqrule.Qos }})
 	{{- end }}
 	{{- end }}
 }
@@ -165,11 +165,11 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 
 {{- range .Services }}
 {{- $serviceName := name . }}
-func ClientSubscribe{{ $serviceName}} (subscribeMQTTFn mqtt.SubscribeMQTTFn) {
+func ClientSubscribe{{ $serviceName}} (groupPrefix string, subscribeMQTTFn mqtt.SubscribeMQTTFn) {
 	{{- range .Methods }}
 	{{- $mqrule := mqrule . }}
 	{{- if ne $mqrule.ReplyTopic "" }}
-	subscribeMQTTFn("{{- $mqrule.ReplyTopic }}",{{- $mqrule.ReplyQos }})
+	subscribeMQTTFn( groupPrefix + "{{- $mqrule.ReplyTopic }}",{{- $mqrule.ReplyQos }})
 	{{- end }}
 	{{- end }}
 }

@@ -11,20 +11,17 @@ extend google.protobuf.MethodOptions {
   // See `MQTTRule`.
   MQTTRule mqtt = 7229572;
 }
-
 message MQTTRule {
-  // topic prefix
-  string prefix = 1;
   // topic
-  string topic = 2;
+  string topic = 1;
   // qos
-  int32 qos = 3;
+  int32 qos = 2;
   // retain
-  bool retain = 4;
+  bool retain = 3;
   // reply topic
-  string reply_topic = 5;
+  string reply_topic = 4;
   // reply qos
-  int32 reply_qos = 6;
+  int32 reply_qos = 5;
   // reply retain
-  bool reply_retain = 7;
+  bool reply_retain = 6;
 }

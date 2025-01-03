@@ -37,7 +37,8 @@ func NewMQTTSever(
 			log.Debugf("subscribeTopic is nil")
 			return
 		}
-		gencode.SubscribeExampleMQServer(subscribeMQTTFn)
+		//gencode.SubscribeExampleMQServer("$share/device/", subscribeMQTTFn)
+		gencode.SubscribeExampleMQServer("", subscribeMQTTFn)
 	}
 	opts.AddBroker("tcp://localhost:1883")
 	opts.SetClientID("server")

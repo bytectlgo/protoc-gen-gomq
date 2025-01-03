@@ -15,10 +15,10 @@ type ExampleMQServer interface {
 	ServiceReply(context.Context, *ThingReq) (*Reply, error)
 }
 
-func SubscribeExampleMQServer(subscribeMQTTFn mqtt.SubscribeMQTTFn) {
-	subscribeMQTTFn("$share/device//device/{deviceKey}/event/{action}/post", 0)
-	subscribeMQTTFn("$share/device//device/{deviceKey}/service/{action}", 0)
-	subscribeMQTTFn("$share/device//device/{deviceKey}/service/{action}", 1)
+func SubscribeExampleMQServer(groupPrefix string, subscribeMQTTFn mqtt.SubscribeMQTTFn) {
+	subscribeMQTTFn(groupPrefix+"/device/{deviceKey}/event/{action}/post", 0)
+	subscribeMQTTFn(groupPrefix+"/device/{deviceKey}/service/{action}", 0)
+	subscribeMQTTFn(groupPrefix+"/device/{deviceKey}/service/{action}", 1)
 }
 func RegisterExampleMQServer(s *mqtt.Server, srv ExampleMQServer) {
 	r := s.Route("/")
@@ -125,10 +125,10 @@ func _ExampleMQServer_ServiceReplyMQ_Handler(srv ExampleMQServer) func(mqtt.Cont
 		return nil
 	}
 }
-func ClientSubscribeExampleMQServer(subscribeMQTTFn mqtt.SubscribeMQTTFn) {
-	subscribeMQTTFn("/device/{deviceKey}/event/{action}/post_reply", 0)
-	subscribeMQTTFn("/device/{deviceKey}/service/{action}_reply", 0)
-	subscribeMQTTFn("/device/{deviceKey}/service/{action}_reply", 1)
+func ClientSubscribeExampleMQServer(groupPrefix string, subscribeMQTTFn mqtt.SubscribeMQTTFn) {
+	subscribeMQTTFn(groupPrefix+"/device/{deviceKey}/event/{action}/post_reply", 0)
+	subscribeMQTTFn(groupPrefix+"/device/{deviceKey}/service/{action}_reply", 0)
+	subscribeMQTTFn(groupPrefix+"/device/{deviceKey}/service/{action}_reply", 1)
 }
 func ClientRegisterExampleMQServer(s *mqtt.Server, srv ClientExampleMQServer) {
 	r := s.Route("/")
