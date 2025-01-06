@@ -67,10 +67,23 @@ func (m mod) Execute(targets map[string]pgs.File, pkgs map[string]pgs.Package) [
 
 func (m mod) generate(f pgs.File) {
 
-	if len(f.Messages()) == 0 {
+	if len(f.Messages()) == 0 && len(f.Services()) == 0 {
 		return
 	}
-
+	generatorFlag := false
+	for _, s := range f.Services() {
+		for _, m := range s.Methods() {
+			if m.Descriptor().Options != nil {
+				if proto.HasExtension(m.Descriptor().Options, mq.E_Mqtt) {
+					generatorFlag = true
+					break
+				}
+			}
+		}
+	}
+	if !generatorFlag {
+		return
+	}
 	filePath := m.Context.OutputPath(f)
 	// name := filePath.SetExt("").SetExt(".mq.go")
 	name := filePath.SetExt(".mq.go")
