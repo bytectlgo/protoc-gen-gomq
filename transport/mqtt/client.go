@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/encoding"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware"
 )
 
@@ -43,6 +44,11 @@ func WithRequestEncoder(encoder EncodeRequestFunc) ClientOption {
 		o.encoder = encoder
 	}
 }
+func WithPublishMQTTFn(fn PublishMQTTFn) ClientOption {
+	return func(o *clientOptions) {
+		o.publishMQTTFn = fn
+	}
+}
 
 // Client is an MQTT client.
 type Client struct {
@@ -74,6 +80,10 @@ func (client *Client) Publish(ctx context.Context, topic string, qos byte, retai
 		}
 	}
 	h := func(ctx context.Context, _ interface{}) (interface{}, error) {
+		if client.opts.publishMQTTFn == nil {
+			log.Error("publishMQTTFn is nil")
+			return nil, nil
+		}
 		err := client.opts.publishMQTTFn(topic, qos, retain, data)
 		return nil, err
 	}

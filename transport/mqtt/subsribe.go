@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -13,6 +14,9 @@ type PublishMQTTFn func(topic string, qos byte, retain bool, payload []byte) err
 func (s *Server) MakePublishMQTTFn(timeout time.Duration) PublishMQTTFn {
 	return func(topic string, qos byte, retain bool, payload []byte) error {
 		c := s.MQTTClient()
+		if c == nil {
+			return fmt.Errorf("mqtt client is nil")
+		}
 		t := c.Publish(topic, qos, retain, payload)
 		t.WaitTimeout(timeout)
 		if t.Error() != nil {
@@ -33,6 +37,11 @@ func (s *Server) MakeSubscribeMQTTFn() SubscribeMQTTFn {
 			sussessResult := true
 			subscribeTopic := getSubscribeTopic(topic)
 			c := s.MQTTClient()
+			if c == nil {
+				log.Errorf("mqtt client is nil")
+				time.Sleep(interval)
+				continue
+			}
 			t := c.Subscribe(subscribeTopic, qos, s.MQTTHandler())
 			waitFlag := t.WaitTimeout(s.timeout)
 			err := t.Error()
