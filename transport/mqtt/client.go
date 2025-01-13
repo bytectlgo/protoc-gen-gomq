@@ -73,16 +73,17 @@ func NewClient(ctx context.Context, opts ...ClientOption) (*Client, error) {
 func (client *Client) Publish(ctx context.Context, topic string, qos byte, retain bool, args interface{}) error {
 	var data []byte
 	var err error
-	if args != nil {
-		data, err = client.opts.encoder(ctx, "json", args)
-		if err != nil {
-			return err
-		}
-	}
+
 	h := func(ctx context.Context, _ interface{}) (interface{}, error) {
 		if client.opts.publishMQTTFn == nil {
 			log.Error("publishMQTTFn is nil")
 			return nil, nil
+		}
+		if args != nil {
+			data, err = client.opts.encoder(ctx, "json", args)
+			if err != nil {
+				return nil, err
+			}
 		}
 		err := client.opts.publishMQTTFn(topic, qos, retain, data)
 		return nil, err
