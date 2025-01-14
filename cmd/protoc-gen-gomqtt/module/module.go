@@ -121,11 +121,12 @@ func Subscribe{{ name .}} (groupPrefix string, subscribeMQTTFn mqtt.SubscribeMQT
 {{- range .Services }}
 {{- $serviceName := name . }}
 func Register{{ $serviceName}} (s *mqtt.Server, srv {{ $serviceName}}) {
-	r := s.Route("/")
-	{{- range .Methods }}
-	{{- $mqrule := mqrule . }}
-
+	{{- range $index, $method := .Methods }}
+	{{- $mqrule := mqrule $method }}
 	{{- if ne $mqrule.Topic "" }}
+	{{- if eq $index 0 }}	
+	r := s.Route("/")
+	{{- end }}
 	r.POST("{{- $mqrule.Topic }}", _{{ $serviceName }}_{{ name .}}MQ_Handler(srv))
 	{{- end }}
 	{{- end }}
@@ -191,11 +192,12 @@ func ClientSubscribe{{ $serviceName}} (groupPrefix string, subscribeMQTTFn mqtt.
 {{- range .Services }}
 {{- $serviceName := name . }}
 func ClientRegister{{ $serviceName}} (s *mqtt.Server, srv Client{{ $serviceName}}) {
-	r := s.Route("/")
-	{{- range .Methods }}
-	{{- $mqrule := mqrule . }}
-
+	{{- range $index, $method := .Methods }}
+	{{- $mqrule := mqrule $method }}
 	{{- if ne $mqrule.ReplyTopic "" }}
+	{{- if eq $index 0 }}	
+	r := s.Route("/")
+	{{- end }}
 	r.POST("{{- $mqrule.ReplyTopic }}", _Client{{ $serviceName }}_{{ name .}}MQ_Handler(srv))
 	{{- end }}
 	{{- end }}
