@@ -1,6 +1,7 @@
 package module
 
 import (
+	"strings"
 	"text/template"
 
 	"github.com/bytectlgo/protoc-gen-gomq/genarate/mq"
@@ -28,6 +29,7 @@ func (m *mod) InitContext(c pgs.BuildContext) {
 		"package": m.Context.PackageName,
 		"name":    m.Context.Name,
 		"mqrule":  m.MQTTRule,
+		"comment": m.Comment,
 		// "marshaler":   p.marshaler,
 		// "unmarshaler": p.unmarshaler,
 	})
@@ -35,6 +37,23 @@ func (m *mod) InitContext(c pgs.BuildContext) {
 	m.tpl = template.Must(tpl.Parse(mqTpl))
 }
 
+func (m mod) Comment(method pgs.Method, commentPrefix string) string {
+	info := method.SourceCodeInfo()
+	if info == nil {
+		return ""
+	}
+	commentStr := info.LeadingComments()
+	// 切割并且补充前缀 commentPrefix,后合并为一个字符串返回
+	comments := strings.Split(commentStr, "\n")
+	commentStr = ""
+	for _, comment := range comments {
+		comment = strings.TrimSpace(comment)
+		if comment != "" {
+			commentStr += commentPrefix + comment + "\n"
+		}
+	}
+	return commentStr
+}
 func (mod) Name() string {
 	return "gomq"
 }
@@ -101,6 +120,7 @@ import (
 {{- range .Services }}
 type {{ name .}} interface {
 	{{- range .Methods }}
+	{{ comment . "// " -}}
 	{{ name .}}(context.Context,*{{ name .Input}}) (*{{ name .Output}}, error)
 	{{- end }}
 }
@@ -207,6 +227,7 @@ func ClientRegister{{ $serviceName}} (s *mqtt.Server, srv Client{{ $serviceName}
 {{- range .Services }}
 type Client{{ name .}} interface {
 	{{- range .Methods }}
+	{{ comment . "// " -}}
 	Client{{ name .}}(context.Context,*{{ name .Output}})  error
 	{{- end }}
 }
@@ -259,6 +280,7 @@ func NewClient{{ $serviceName}}Impl(client *mqtt.Client) *Client{{ $serviceName}
 {{- $serviceName := name . }}
 {{- range .Methods }}
 {{- $mqrule := mqrule . }}
+{{ comment . "// " -}}
 func (c *Client{{ $serviceName }}Impl) {{ name .}}(ctx context.Context, in *{{ name .Input}}) error {
 	topic := "{{- $mqrule.Topic }}"
 	path := binding.EncodeURL(topic, in, false)

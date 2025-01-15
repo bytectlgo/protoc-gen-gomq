@@ -10,8 +10,13 @@ import (
 )
 
 type ExampleMQServer interface {
+	// 设备属性,事件上报
 	EventPost(context.Context, *ThingReq) (*Reply, error)
+	// 服务指令下发
+	// 服务器下发指令给设备
+	// 设备回复指令执行结果
 	ServiceRequest(context.Context, *ThingReq) (*Reply, error)
+	// 服务指令回复
 	ServiceReply(context.Context, *ThingReq) (*Reply, error)
 }
 
@@ -138,8 +143,13 @@ func ClientRegisterExampleMQServer(s *mqtt.Server, srv ClientExampleMQServer) {
 }
 
 type ClientExampleMQServer interface {
+	// 设备属性,事件上报
 	ClientEventPost(context.Context, *Reply) error
+	// 服务指令下发
+	// 服务器下发指令给设备
+	// 设备回复指令执行结果
 	ClientServiceRequest(context.Context, *Reply) error
+	// 服务指令回复
 	ClientServiceReply(context.Context, *Reply) error
 }
 
@@ -222,16 +232,24 @@ func NewClientExampleMQServerImpl(client *mqtt.Client) *ClientExampleMQServerImp
 		client: client,
 	}
 }
+
+// 设备属性,事件上报
 func (c *ClientExampleMQServerImpl) EventPost(ctx context.Context, in *ThingReq) error {
 	topic := "/device/{deviceKey}/event/{action}/post"
 	path := binding.EncodeURL(topic, in, false)
 	return c.client.Publish(ctx, path, 0, false, in)
 }
+
+// 服务指令下发
+// 服务器下发指令给设备
+// 设备回复指令执行结果
 func (c *ClientExampleMQServerImpl) ServiceRequest(ctx context.Context, in *ThingReq) error {
 	topic := "/device/{deviceKey}/service/{action}"
 	path := binding.EncodeURL(topic, in, false)
 	return c.client.Publish(ctx, path, 0, false, in)
 }
+
+// 服务指令回复
 func (c *ClientExampleMQServerImpl) ServiceReply(ctx context.Context, in *ThingReq) error {
 	topic := "/device/{deviceKey}/service/{action}"
 	path := binding.EncodeURL(topic, in, false)

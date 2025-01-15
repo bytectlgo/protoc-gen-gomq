@@ -21,6 +21,8 @@ service ExampleMQ {
     };
   }
   // 服务指令下发
+  // 服务器下发指令给设备
+  // 设备回复指令执行结果
   rpc ServiceRequest(ThingReq) returns (Reply) {
     option (mq.mqtt) = {
       topic : "/device/{deviceKey}/service/{action}"
