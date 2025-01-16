@@ -116,6 +116,12 @@ import (
 	"github.com/bytectlgo/protoc-gen-gomq/transport/mqtt"
 )
 
+{{- range .Services }}
+{{- $serviceName := name . }}
+{{- range .Methods }}
+	const Operation{{ name .}} = "/{{ package . }}.{{ $serviceName }}/{{ name .}}"
+{{- end }}
+{{- end }}
 
 {{- range .Services }}
 type {{ name .}} interface {
@@ -175,6 +181,7 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 			topic := binding.EncodeURL(pattern, in, false)
 			ctx.Response().Header().Set(mqtt.MQTT_REPLY_TOPIC_HEADER, topic)
 		{{- end }}
+		mqtt.SetOperation(ctx, Operation{{ name .}})
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.{{ name .}}(ctx, req.(*{{ name .Input}}))
 		})
@@ -250,6 +257,7 @@ func _Client{{ $serviceName }}_{{ name .}}MQ_Handler(srv Client{{ $serviceName }
 		if err != nil {
 			return fmt.Errorf("bind vars error:%v", err)
 		}
+		mqtt.SetOperation(ctx, Operation{{ name .}})
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			err := srv.Client{{ name .}}(ctx, req.(*{{ name .Output}}))
 			return nil, err

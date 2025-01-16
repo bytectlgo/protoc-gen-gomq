@@ -9,6 +9,10 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http/binding"
 )
 
+const OperationEventPost = "/gencode.ExampleMQServer/EventPost"
+const OperationServiceRequest = "/gencode.ExampleMQServer/ServiceRequest"
+const OperationServiceReply = "/gencode.ExampleMQServer/ServiceReply"
+
 type ExampleMQServer interface {
 	// 设备属性,事件上报
 	EventPost(context.Context, *ThingReq) (*Reply, error)
@@ -47,6 +51,7 @@ func _ExampleMQServer_EventPostMQ_Handler(srv ExampleMQServer) func(mqtt.Context
 		pattern := "/device/{deviceKey}/event/{action}/post_reply"
 		topic := binding.EncodeURL(pattern, in, false)
 		ctx.Response().Header().Set(mqtt.MQTT_REPLY_TOPIC_HEADER, topic)
+		mqtt.SetOperation(ctx, OperationEventPost)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.EventPost(ctx, req.(*ThingReq))
 		})
@@ -80,6 +85,7 @@ func _ExampleMQServer_ServiceRequestMQ_Handler(srv ExampleMQServer) func(mqtt.Co
 		pattern := "/device/{deviceKey}/service/{action}_reply"
 		topic := binding.EncodeURL(pattern, in, false)
 		ctx.Response().Header().Set(mqtt.MQTT_REPLY_TOPIC_HEADER, topic)
+		mqtt.SetOperation(ctx, OperationServiceRequest)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.ServiceRequest(ctx, req.(*ThingReq))
 		})
@@ -113,6 +119,7 @@ func _ExampleMQServer_ServiceReplyMQ_Handler(srv ExampleMQServer) func(mqtt.Cont
 		pattern := "/device/{deviceKey}/service/{action}_reply"
 		topic := binding.EncodeURL(pattern, in, false)
 		ctx.Response().Header().Set(mqtt.MQTT_REPLY_TOPIC_HEADER, topic)
+		mqtt.SetOperation(ctx, OperationServiceReply)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.ServiceReply(ctx, req.(*ThingReq))
 		})
@@ -165,6 +172,7 @@ func _ClientExampleMQServer_EventPostMQ_Handler(srv ClientExampleMQServer) func(
 		if err != nil {
 			return fmt.Errorf("bind vars error:%v", err)
 		}
+		mqtt.SetOperation(ctx, OperationEventPost)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			err := srv.ClientEventPost(ctx, req.(*Reply))
 			return nil, err
@@ -188,6 +196,7 @@ func _ClientExampleMQServer_ServiceRequestMQ_Handler(srv ClientExampleMQServer) 
 		if err != nil {
 			return fmt.Errorf("bind vars error:%v", err)
 		}
+		mqtt.SetOperation(ctx, OperationServiceRequest)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			err := srv.ClientServiceRequest(ctx, req.(*Reply))
 			return nil, err
@@ -211,6 +220,7 @@ func _ClientExampleMQServer_ServiceReplyMQ_Handler(srv ClientExampleMQServer) fu
 		if err != nil {
 			return fmt.Errorf("bind vars error:%v", err)
 		}
+		mqtt.SetOperation(ctx, OperationServiceReply)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			err := srv.ClientServiceReply(ctx, req.(*Reply))
 			return nil, err
