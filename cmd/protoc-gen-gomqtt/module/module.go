@@ -247,7 +247,6 @@ type Client{{ name .}} interface {
 {{- $mqrule := mqrule . }}
 func _Client{{ $serviceName }}_{{ name .}}MQ_Handler(srv Client{{ $serviceName }}) func(mqtt.Context) error {
 	return func(ctx mqtt.Context) error {
-		log.Debugf("receive mq topic:%v, body: %v", ctx.Message().Topic(), string(ctx.Message().Payload()))
 		in := &{{ name .Output}}{}
 		err := ctx.Bind(in)
 		if err != nil {
