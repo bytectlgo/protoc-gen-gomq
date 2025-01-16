@@ -289,10 +289,11 @@ func NewClient{{ $serviceName}}Impl(client *mqtt.Client) *Client{{ $serviceName}
 {{- range .Methods }}
 {{- $mqrule := mqrule . }}
 {{ comment . "// " -}}
-func (c *Client{{ $serviceName }}Impl) {{ name .}}(ctx context.Context, in *{{ name .Input}}) error {
+func (c *Client{{ $serviceName }}Impl) {{ name .}}(ctx context.Context, in *{{ name .Input}}, opts ...mqtt.CallOption) error {
 	topic := "{{- $mqrule.Topic }}"
 	path := binding.EncodeURL(topic, in, false)
-	return c.client.Publish(ctx, path, {{- $mqrule.Qos }}, {{- $mqrule.Retain }}, in)	
+	opts = append(opts, mqtt.Operation(Operation{{ name .}}))
+	return c.client.Publish(ctx, path, {{- $mqrule.Qos }}, {{- $mqrule.Retain }}, in, opts...)	
 }
 {{- end }}
 {{- end }}

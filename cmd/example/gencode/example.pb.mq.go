@@ -244,24 +244,27 @@ func NewClientExampleMQServerImpl(client *mqtt.Client) *ClientExampleMQServerImp
 }
 
 // 设备属性,事件上报
-func (c *ClientExampleMQServerImpl) EventPost(ctx context.Context, in *ThingReq) error {
+func (c *ClientExampleMQServerImpl) EventPost(ctx context.Context, in *ThingReq, opts ...mqtt.CallOption) error {
 	topic := "/device/{deviceKey}/event/{action}/post"
 	path := binding.EncodeURL(topic, in, false)
-	return c.client.Publish(ctx, path, 0, false, in)
+	opts = append(opts, mqtt.Operation(OperationEventPost))
+	return c.client.Publish(ctx, path, 0, false, in, opts...)
 }
 
 // 服务指令下发
 // 服务器下发指令给设备
 // 设备回复指令执行结果
-func (c *ClientExampleMQServerImpl) ServiceRequest(ctx context.Context, in *ThingReq) error {
+func (c *ClientExampleMQServerImpl) ServiceRequest(ctx context.Context, in *ThingReq, opts ...mqtt.CallOption) error {
 	topic := "/device/{deviceKey}/service/{action}"
 	path := binding.EncodeURL(topic, in, false)
-	return c.client.Publish(ctx, path, 0, false, in)
+	opts = append(opts, mqtt.Operation(OperationServiceRequest))
+	return c.client.Publish(ctx, path, 0, false, in, opts...)
 }
 
 // 服务指令回复
-func (c *ClientExampleMQServerImpl) ServiceReply(ctx context.Context, in *ThingReq) error {
+func (c *ClientExampleMQServerImpl) ServiceReply(ctx context.Context, in *ThingReq, opts ...mqtt.CallOption) error {
 	topic := "/device/{deviceKey}/service/{action}"
 	path := binding.EncodeURL(topic, in, false)
-	return c.client.Publish(ctx, path, 1, true, in)
+	opts = append(opts, mqtt.Operation(OperationServiceReply))
+	return c.client.Publish(ctx, path, 1, true, in, opts...)
 }

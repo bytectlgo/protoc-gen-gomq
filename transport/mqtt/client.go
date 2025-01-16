@@ -7,6 +7,7 @@ import (
 	"github.com/go-kratos/kratos/v2/encoding"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware"
+	"github.com/go-kratos/kratos/v2/transport"
 )
 
 // EncodeRequestFunc is request encode func.
@@ -70,10 +71,15 @@ func NewClient(ctx context.Context, opts ...ClientOption) (*Client, error) {
 	}, nil
 }
 
-func (client *Client) Publish(ctx context.Context, topic string, qos byte, retain bool, args interface{}) error {
+func (client *Client) Publish(ctx context.Context, topic string, qos byte, retain bool, args interface{}, opts ...CallOption) error {
 	var data []byte
 	var err error
-
+	c := defaultCallInfo(topic)
+	for _, o := range opts {
+		if err := o.before(&c); err != nil {
+			return err
+		}
+	}
 	h := func(ctx context.Context, _ interface{}) (interface{}, error) {
 		if client.opts.publishMQTTFn == nil {
 			log.Error("publishMQTTFn is nil")
@@ -92,6 +98,10 @@ func (client *Client) Publish(ctx context.Context, topic string, qos byte, retai
 	if len(client.opts.middleware) > 0 {
 		h = middleware.Chain(client.opts.middleware...)(h)
 	}
+	ctx = transport.NewClientContext(ctx, &Transport{
+		endpoint:  "mqtt",
+		operation: c.operation,
+	})
 	_, err = h(ctx, args)
 	return err
 }
