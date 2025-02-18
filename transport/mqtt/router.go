@@ -59,5 +59,6 @@ func (r *Router) Handle(method, relativePath string, h HandlerFunc, filters ...x
 
 // POST registers a new POST route for a path with matching handler in the router.
 func (r *Router) POST(path string, h HandlerFunc, m ...xhttp.FilterFunc) {
+	path = getUrlPathFromTopic(path)
 	r.Handle(http.MethodPost, path, h, m...)
 }
