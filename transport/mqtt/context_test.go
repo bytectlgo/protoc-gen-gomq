@@ -13,7 +13,7 @@ import (
 	xhttp "github.com/go-kratos/kratos/v2/transport/http"
 )
 
-var testRouter = &Router{srv: NewServer(nil)}
+var testRouter = &Router{srv: NewServer()}
 
 func TestContextHeader(t *testing.T) {
 	w := wrapper{
@@ -109,7 +109,7 @@ func TestResponseUnwrap(t *testing.T) {
 		res:    res,
 		w:      responseWriter{200, res},
 	}
-	err := w.JSON("test", "ok")
+	err := w.JSON(map[string]string{"test": "ok"})
 	if err != nil {
 		t.Errorf("expected %v, got %v", nil, err)
 	}
@@ -123,7 +123,7 @@ func TestContextResponseReturn(t *testing.T) {
 		res:    writer,
 		w:      responseWriter{},
 	}
-	err := w.JSON("/test", "success")
+	err := w.JSON(map[string]string{"test": "ok"})
 	if err != nil {
 		t.Errorf("expected %v, got %v", nil, err)
 	}

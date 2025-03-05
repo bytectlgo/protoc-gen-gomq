@@ -20,7 +20,7 @@ func DefaultErrorEncoder(w http.ResponseWriter, r *http.Request, err error) {
 	codec := encoding.GetCodec("json")
 	body, err := codec.Marshal(se)
 	if err != nil {
-		log.Error("ErrorEncoder json error:%v", err)
+		log.Errorf("ErrorEncoder json error:%v", err)
 		return
 	}
 	_, _ = w.Write(body)

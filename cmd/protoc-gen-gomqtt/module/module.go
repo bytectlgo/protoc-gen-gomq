@@ -296,4 +296,31 @@ func (c *Client{{ $serviceName }}Impl) {{ name .}}(ctx context.Context, in *{{ n
 }
 {{- end }}
 {{- end }}
+
+{{- range .Services }}
+{{- $serviceName := name . }}
+type ClientReply{{ $serviceName}}Impl struct {
+	client *mqtt.Client
+}
+func NewClientReply{{ $serviceName}}Impl(client *mqtt.Client) *ClientReply{{ $serviceName}}Impl {
+	return &ClientReply{{ $serviceName}}Impl{
+		client: client,
+	}
+}		
+{{- end }}
+{{- range .Services }}
+{{- $serviceName := name . }}
+{{- range .Methods }}
+{{- $mqrule := mqrule . }}
+{{- if ne $mqrule.ReplyTopic "" }}
+{{ comment . "// " -}}
+func (c *ClientReply{{ $serviceName }}Impl) {{ name .}}(ctx context.Context, in *{{ name .Output}}, opts ...mqtt.CallOption) error {
+	topic := "{{- $mqrule.ReplyTopic }}"
+	path := binding.EncodeURL(topic, in, false)
+	opts = append(opts, mqtt.Operation(Operation{{ name .}}))
+	return c.client.Publish(ctx, path, {{- $mqrule.ReplyQos }}, {{- $mqrule.ReplyRetain }}, in, opts...)	
+}
+{{- end }}
+{{- end }}
+{{- end }}
 `

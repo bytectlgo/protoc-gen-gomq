@@ -14,8 +14,8 @@ var _ Transporter = (*Transport)(nil)
 type Transporter interface {
 	transport.Transporter
 	Request() *http.Request
-	Client() *mqtt.Client
-	Message() *mqtt.Message
+	Client() mqtt.Client
+	Message() mqtt.Message
 }
 
 // Transport is an MQTT transport.
@@ -26,8 +26,8 @@ type Transport struct {
 	replyHeader headerCarrier
 	request     *http.Request
 	response    http.ResponseWriter
-	client      *mqtt.Client
-	message     *mqtt.Message
+	client      mqtt.Client
+	message     mqtt.Message
 }
 
 // Kind returns the transport kind.
@@ -61,12 +61,12 @@ func (tr *Transport) ReplyHeader() transport.Header {
 }
 
 // Client returns the MQTT client.
-func (tr *Transport) Client() *mqtt.Client {
+func (tr *Transport) Client() mqtt.Client {
 	return tr.client
 }
 
 // Message returns the MQTT message.
-func (tr *Transport) Message() *mqtt.Message {
+func (tr *Transport) Message() mqtt.Message {
 	return tr.message
 }
 
@@ -90,7 +90,7 @@ func RequestFromServerContext(ctx context.Context) (*http.Request, bool) {
 }
 
 // ClientFromServerContext returns client from context.
-func ClientFromServerContext(ctx context.Context) (*mqtt.Client, bool) {
+func ClientFromServerContext(ctx context.Context) (mqtt.Client, bool) {
 	if tr, ok := transport.FromServerContext(ctx); ok {
 		if tr, ok := tr.(*Transport); ok {
 			return tr.client, true
@@ -100,7 +100,7 @@ func ClientFromServerContext(ctx context.Context) (*mqtt.Client, bool) {
 }
 
 // MessageFromServerContext returns message from context.
-func MessageFromServerContext(ctx context.Context) (*mqtt.Message, bool) {
+func MessageFromServerContext(ctx context.Context) (mqtt.Message, bool) {
 	if tr, ok := transport.FromServerContext(ctx); ok {
 		if tr, ok := tr.(*Transport); ok {
 			return tr.message, true
