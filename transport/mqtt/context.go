@@ -2,7 +2,6 @@ package mqtt
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,6 +10,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gorilla/mux"
 
+	"github.com/go-kratos/kratos/v2/encoding"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 )
@@ -98,12 +98,28 @@ func (c *wrapper) Returns(v interface{}, err error) error {
 	if err != nil {
 		return err
 	}
-	return c.router.srv.enc(&c.w, c.req, v)
+	if v == nil {
+		return nil
+	}
+	return c.router.srv.enc(c.res, c.req, v)
 }
 
 func (c *wrapper) JSON(v interface{}) error {
+	if v == nil {
+		return nil
+	}
 	c.res.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(c.res).Encode(v)
+
+	codec := encoding.GetCodec("json")
+	data, err := codec.Marshal(v)
+	if err != nil {
+		return err
+	}
+	_, err = c.res.Write(data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *wrapper) String(text string) error {
@@ -116,6 +132,9 @@ func (c *wrapper) String(text string) error {
 }
 
 func (c *wrapper) Stream(contentType string, rd io.Reader) error {
+	if rd == nil {
+		return nil
+	}
 	c.res.Header().Set("Content-Type", contentType)
 	_, err := io.Copy(c.res, rd)
 	return err
