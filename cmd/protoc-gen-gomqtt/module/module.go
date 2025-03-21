@@ -174,13 +174,7 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 		if err != nil {
 			return fmt.Errorf("bind vars error:%v", err)
 		}
-		{{- if ne $mqrule.ReplyTopic "" }}
-			ctx.Response().Header().Set(mqtt.MQTT_REPLY_QOS_HEADER, "{{- $mqrule.ReplyQos }}")
-			ctx.Response().Header().Set(mqtt.MQTT_REPLY_RETAIN_HEADER, "{{- $mqrule.ReplyRetain }}")
-			pattern := "{{- $mqrule.ReplyTopic }}"
-			topic := binding.EncodeURL(pattern, in, false)
-			ctx.Response().Header().Set(mqtt.MQTT_REPLY_TOPIC_HEADER, topic)
-		{{- end }}
+
 		mqtt.SetOperation(ctx, Operation{{ name .}})
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.{{ name .}}(ctx, req.(*{{ name .Input}}))
@@ -193,6 +187,11 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 			return fmt.Errorf("handler error:%v", err)
 		}
 		{{- if ne $mqrule.ReplyTopic "" }}
+			ctx.Response().Header().Set(mqtt.MQTT_REPLY_QOS_HEADER, "{{- $mqrule.ReplyQos }}")
+			ctx.Response().Header().Set(mqtt.MQTT_REPLY_RETAIN_HEADER, "{{- $mqrule.ReplyRetain }}")
+			pattern := "{{- $mqrule.ReplyTopic }}"
+			topic := binding.EncodeURL(pattern, in, false)
+			ctx.Response().Header().Set(mqtt.MQTT_REPLY_TOPIC_HEADER, topic)
 			err = ctx.JSON(reply)
 			if err != nil {
 				return fmt.Errorf("json error:%v", err)
