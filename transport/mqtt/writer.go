@@ -25,6 +25,9 @@ func (rw *MQTTResponseWriter) Header() http.Header {
 }
 
 func (rw *MQTTResponseWriter) Write(b []byte) (int, error) {
+	if len(b) == 0 {
+		return 0, nil
+	}
 	topic := rw.getTopic()
 	if topic == "" {
 		log.Warnf("topic is empty, body: %s", string(b))
