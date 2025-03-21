@@ -96,7 +96,7 @@ func getSubscribeTopic(topic string) string {
 		if dir == "" {
 			continue
 		}
-		if dir[0] == '{' && dir[len(dir)-1] == '}' {
+		if dir[0] == '{' && strings.Contains(dir, "}") {
 			dirs[i] = "+"
 		}
 		if dir[0] == '*' {
