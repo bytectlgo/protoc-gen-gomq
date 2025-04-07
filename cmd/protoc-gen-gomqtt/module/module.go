@@ -114,6 +114,7 @@ const mqTpl = `package {{ package . }}
 import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/bytectlgo/protoc-gen-gomq/transport/mqtt"
+	"reflect"
 )
 
 {{- range .Services }}
@@ -180,7 +181,7 @@ func _{{ $serviceName }}_{{ name .}}MQ_Handler(srv {{ $serviceName }}) func(mqtt
 			return srv.{{ name .}}(ctx, req.(*{{ name .Input}}))
 		})
 		reply, err := h(ctx, in)
-		if reply == nil {
+		if reply == nil || reflect.ValueOf(reply).IsNil() {
 			return err
 		}
 		if err != nil {

@@ -11,9 +11,21 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/go-kratos/kratos/v2/encoding"
+	kjson "github.com/go-kratos/kratos/v2/encoding/json"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 )
+
+var njson encoding.Codec
+
+func init() {
+	// 注册json编码器
+	kjson.MarshalOptions.EmitDefaultValues = true
+	njson = encoding.GetCodec("json")
+	if njson == nil {
+		panic("json codec not found")
+	}
+}
 
 var _ Context = (*wrapper)(nil)
 
@@ -25,9 +37,9 @@ type Context interface {
 	Message() mqtt.Message
 	Response() http.ResponseWriter
 	Middleware(middleware.Handler) middleware.Handler
-	Bind(interface{}) error
-	BindVars(interface{}) error
-	JSON(interface{}) error
+	Bind(any) error
+	BindVars(any) error
+	JSON(any) error
 	String(string) error
 	Stream(string, io.Reader) error
 	Reset(http.ResponseWriter, *http.Request)
@@ -91,10 +103,10 @@ func (c *wrapper) Middleware(h middleware.Handler) middleware.Handler {
 	}
 	return middleware.Chain(c.router.srv.middleware.Match(c.req.URL.Path)...)(h)
 }
-func (c *wrapper) Bind(v interface{}) error     { return c.router.srv.decBody(c.req, v) }
-func (c *wrapper) BindVars(v interface{}) error { return c.router.srv.decVars(c.req, v) }
+func (c *wrapper) Bind(v any) error     { return c.router.srv.decBody(c.req, v) }
+func (c *wrapper) BindVars(v any) error { return c.router.srv.decVars(c.req, v) }
 
-func (c *wrapper) Returns(v interface{}, err error) error {
+func (c *wrapper) Returns(v any, err error) error {
 	if err != nil {
 		return err
 	}
@@ -104,14 +116,12 @@ func (c *wrapper) Returns(v interface{}, err error) error {
 	return c.router.srv.enc(c.res, c.req, v)
 }
 
-func (c *wrapper) JSON(v interface{}) error {
+func (c *wrapper) JSON(v any) error {
 	if v == nil {
 		return nil
 	}
 	c.res.Header().Set("Content-Type", "application/json")
-
-	codec := encoding.GetCodec("json")
-	data, err := codec.Marshal(v)
+	data, err := njson.Marshal(v)
 	if err != nil {
 		return err
 	}
