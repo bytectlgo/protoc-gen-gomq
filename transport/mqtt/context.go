@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/go-kratos/kratos/v2/encoding"
-	kjson "github.com/go-kratos/kratos/v2/encoding/json"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/transport"
 )
@@ -19,8 +18,6 @@ import (
 var njson encoding.Codec
 
 func init() {
-	// 注册json编码器
-	kjson.MarshalOptions.EmitDefaultValues = true
 	njson = encoding.GetCodec("json")
 	if njson == nil {
 		panic("json codec not found")
@@ -177,7 +174,7 @@ func (c *wrapper) Err() error {
 	return c.req.Context().Err()
 }
 
-func (c *wrapper) Value(key interface{}) interface{} {
+func (c *wrapper) Value(key any) any {
 	if c.req == nil {
 		return nil
 	}
